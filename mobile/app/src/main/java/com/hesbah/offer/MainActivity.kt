@@ -75,7 +75,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
   else{
    val lm=activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
    val listener=object:LocationListener{override fun onLocationChanged(l:Location){gps="GPS: %.5f, %.5f".format(l.latitude,l.longitude);scope.launch{try{api.call("/api/drivers/me/location","PATCH",JSONObject().put("lat",l.latitude).put("lng",l.longitude).toString())}catch(_:Exception){}}}}
-   if(androidx.core.content.ContextCompat.checkSelfPermission(activity,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+   if(activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED){
     try{lm.requestLocationUpdates(LocationManager.GPS_PROVIDER,10000L,10f,listener);lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,10000L,10f,listener)}catch(_:Exception){}
    }else activity.requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),77)
    onDispose{try{lm.removeUpdates(listener)}catch(_:Exception){}}
