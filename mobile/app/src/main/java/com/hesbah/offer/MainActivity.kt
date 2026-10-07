@@ -83,7 +83,8 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  if(session==null) Login(api){session=api.session()} else if(session!!.role=="driver") DriverHome(api,session!!){api.clear();session=null} else CustomerHome(api,session!!){api.clear();session=null}
 }
 @Composable fun Login(api:Api,onDone:()->Unit){
- var register by remember{mutableStateOf(false)}
+ var register by remember{mutableStateOf(false)};var driverRegister by remember{mutableStateOf(false)}
+ if(driverRegister){DriverRegistration(api){driverRegister=false};return}
  if(register){
   var name by remember{mutableStateOf("")};var phone by remember{mutableStateOf("")};var email by remember{mutableStateOf("")};var username by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var error by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
   Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center){
@@ -101,7 +102,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
   OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
   OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth(),visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};TextButton(onClick={register=true}){Text("تسجيل مندوب جديد")}}
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};TextButton(onClick={driverRegister=true}){Text("تسجيل مندوب جديد")}}
   Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
  }
 }
