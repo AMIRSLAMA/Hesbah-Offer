@@ -273,7 +273,7 @@ router.patch('/driver-applications/:id',requireAuth,allow('admin'),(req,res)=>{
  write(db);res.json({ok:true,application:{id:app.id,status:app.status,userId:app.userId,driverId:app.driverId}});
 });
 
-router.get('/users',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,users:db.users.map(u=>({id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId,createdAt:u.createdAt}))});});
+router.get('/users',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,users:db.users.map(u=>({id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId,createdAt:u.createdAt,lastLoginAt:u.lastLoginAt,lastLoginIp:u.lastLoginIp}))});});
 router.post('/users',requireAuth,allow('admin'),(req,res)=>{
  const db=read(),{name,phone,username,password,role,storeId}=req.body||{};
  if(!name||!username||!password||!['admin','merchant','driver','customer'].includes(role))return res.status(400).json({ok:false,message:'بيانات المستخدم غير صحيحة'});
