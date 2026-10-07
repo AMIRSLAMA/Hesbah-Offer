@@ -42,12 +42,61 @@ async function trackOrder(id){
 }
 async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
  try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();
+ if(role==='driver'){
+  let gps=document.querySelector('#driver-gps-status');
+  if(!gps){gps=document.createElement('div');gps.id='driver-gps-status';gps.className='card';gps.style.marginBottom='12px';box.parentNode.insertBefore(gps,box);}
+  if(['driver_assigned','picked_up','out_for_delivery'].some(s=>d.orders.some(o=>o.status===s)))startDriverGPS();
+ }
  box.innerHTML=d.orders.length?d.orders.map(o=>{
  const driver=role==='driver';
  const action=nextAction(role,o.status);
  return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div>${stageBar(o.status)}<p><b>الخطوة الحالية:</b> ${statusAr(o.status)}</p>${action?`<p class="muted">الإجراء المطلوب الآن: ${action[1]}</p>`:''}<p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
 }
-async function setStatus(id,status){if(!status)return;try{await apiP('/orders/'+id+'/status',{method:'PATCH',body:JSON.stringify({status})});loadOrders()}catch(e){alert(e.message)}}
+let driverGpsWatch=null;
+let driverGpsLastSent=0;
+
+async function startDriverGPS(){
+ if(currentRole()!=='driver'||!navigator.geolocation)return;
+ if(driverGpsWatch!==null)return;
+ const sendPosition=async(pos)=>{
+  const nowMs=Date.now();
+  if(nowMs-driverGpsLastSent<5000)return;
+  driverGpsLastSent=nowMs;
+  try{
+   const r=await apiP('/drivers/me/location',{method:'PATCH',body:JSON.stringify({lat:pos.coords.latitude,lng:pos.coords.longitude})});
+   const box=document.querySelector('#driver-gps-status');
+   if(box)box.textContent='📍 GPS يعمل — آخر إرسال: '+new Date(r.location.updatedAt).toLocaleTimeString('ar-EG');
+  }catch(e){
+   const box=document.querySelector('#driver-gps-status');
+   if(box)box.textContent='⚠️ لا يوجد طلب توصيل نشط حالياً';
+  }
+ };
+ const box=document.querySelector('#driver-gps-status');
+ if(box)box.textContent='📍 جاري تحديد موقعك...';
+ navigator.geolocation.getCurrentPosition(sendPosition,()=>{
+  const b=document.querySelector('#driver-gps-status');
+  if(b)b.textContent='⚠️ اسمح للموقع من إعدادات المتصفح حتى يظهر موقعك للعميل';
+ },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+ driverGpsWatch=navigator.geolocation.watchPosition(sendPosition,()=>{
+  const b=document.querySelector('#driver-gps-status');
+  if(b)b.textContent='⚠️ تعذر قراءة GPS — اسمح للموقع من المتصفح';
+ },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+}
+function stopDriverGPS(){
+ if(driverGpsWatch!==null&&navigator.geolocation){
+  navigator.geolocation.clearWatch(driverGpsWatch);
+  driverGpsWatch=null;
+ }
+}
+async function setStatus(id,status){
+ if(!status)return;
+ try{
+  await apiP('/orders/'+id+'/status',{method:'PATCH',body:JSON.stringify({status})});
+  if(currentRole()==='driver'&&['picked_up','out_for_delivery'].includes(status))startDriverGPS();
+  if(currentRole()==='driver'&&status==='delivered')stopDriverGPS();
+  loadOrders();
+ }catch(e){alert(e.message)}
+}
 async function assignDriver(id){try{const d=await apiP('/drivers');const free=d.drivers.filter(x=>x.status==='available');if(!free.length)return alert('لا يوجد مندوب متاح حالياً');const names=free.map((x,i)=>`${i+1}) ${x.name} — ${x.status} — ⭐${x.rating}`).join('\n');const pick=Number(prompt('اختر رقم المندوب:\n'+names));if(!pick||!free[pick-1])return;await apiP('/orders/'+id+'/assign-driver',{method:'POST',body:JSON.stringify({driverId:free[pick-1].id})});loadOrders()}catch(e){alert(e.message)}}
 async function loadDashboard(){
  activeView='dashboard';
