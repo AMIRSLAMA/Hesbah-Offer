@@ -171,11 +171,11 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  res.json({ok:true,summary,settlements:db.settlements.filter(x=>req.user.role==='admin'||(req.user.role==='merchant'&&x.ownerId===req.user.storeId)||(req.user.role==='driver'&&x.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
-router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled)}));
+router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled).map(({id,name,instructions})=>({id,name,instructions:instructions||''}))}));
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
- if(req.body.currency)db.settings.currency=String(req.body.currency);if(Array.isArray(req.body.paymentMethods))db.settings.paymentMethods=req.body.paymentMethods.map(x=>({id:String(x.id),name:String(x.name),enabled:Boolean(x.enabled)}));
+ if(req.body.currency)db.settings.currency=String(req.body.currency);if(Array.isArray(req.body.paymentMethods))db.settings.paymentMethods=req.body.paymentMethods.map(x=>({id:String(x.id),name:String(x.name),enabled:Boolean(x.enabled),instructions:String(x.instructions||'').trim()}));
  write(db);res.json({ok:true,settings:db.settings});
 });
 router.get('/stores',requireAuth,allow('admin','merchant'),(req,res)=>{
@@ -274,11 +274,14 @@ router.patch('/driver-applications/:id',requireAuth,allow('admin'),(req,res)=>{
 });
 
 router.get('/users',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,users:db.users.map(u=>({id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId,createdAt:u.createdAt,lastLoginAt:u.lastLoginAt,lastLoginIp:u.lastLoginIp}))});});
+router.post('/users/:id/delete-request',requireAuth,(req,res)=>{const db=read(),u=user(db,req.params.id);if(!u)return res.status(404).json({ok:false,message:'المستخدم غير موجود'});if(req.user.id!==u.id&&req.user.role!=='admin')return res.status(403).json({ok:false,message:'غير مصرح'});if(u.role!=='customer')return res.status(400).json({ok:false,message:'حذف هذا النوع من الحسابات يحتاج إجراء إداري خاص'});if(u.deleteRequestedAt)return res.status(409).json({ok:false,message:'يوجد طلب حذف قائم بالفعل'});u.deleteRequestedAt=now();u.deleteRequestNote=String(req.body.note||'').trim();write(db);res.json({ok:true,message:'تم إرسال طلب حذف الحساب للإدارة'});});
+router.get('/customer-delete-requests',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,requests:db.users.filter(u=>u.role==='customer'&&u.deleteRequestedAt).map(u=>({id:u.id,name:u.name,phone:u.phone,email:u.email||'',username:u.username,requestedAt:u.deleteRequestedAt,note:u.deleteRequestNote||''}))});});
+router.patch('/customer-delete-requests/:id',requireAuth,allow('admin'),(req,res)=>{const db=read(),u=user(db,req.params.id),action=String(req.body.action||'');if(!u||u.role!=='customer'||!u.deleteRequestedAt)return res.status(404).json({ok:false,message:'طلب الحذف غير موجود'});if(action==='reject'){u.deleteRequestedAt=null;u.deleteRequestNote='';write(db);return res.json({ok:true,message:'تم رفض طلب الحذف'});}if(action==='approve'){const hasActive=(db.orders||[]).some(o=>o.customerId===u.id&&!['delivered','cancelled'].includes(o.status));if(hasActive)return res.status(409).json({ok:false,message:'لا يمكن حذف العميل لديه طلبات نشطة'});db.notifications=(db.notifications||[]).filter(n=>n.userId!==u.id);db.users=db.users.filter(x=>x.id!==u.id);write(db);return res.json({ok:true,message:'تم حذف حساب العميل بعد موافقة الإدارة'});}return res.status(400).json({ok:false,message:'إجراء غير صحيح'});});
 router.post('/users',requireAuth,allow('admin'),(req,res)=>{
- const db=read(),{name,phone,username,password,role,storeId}=req.body||{};
+ const db=read(),{name,phone,email,username,password,role,storeId}=req.body||{};
  if(!name||!username||!password||!['admin','merchant','driver','customer'].includes(role))return res.status(400).json({ok:false,message:'بيانات المستخدم غير صحيحة'});
  if(db.users.some(u=>u.username.toLowerCase()===String(username).toLowerCase()))return res.status(409).json({ok:false,message:'اسم المستخدم مستخدم بالفعل'});
- const u={id:'u_'+uuid(),name:String(name),phone:String(phone||''),username:String(username),password:require('bcryptjs').hashSync(String(password),10),role,storeId:storeId||undefined,createdAt:now()};
+ const u={id:'u_'+uuid(),name:String(name),phone:String(phone||''),email:String(email||'').trim().toLowerCase(),username:String(username),password:require('bcryptjs').hashSync(String(password),10),role,storeId:storeId||undefined,createdAt:now()};
  if(role==='driver'){const d={id:'d_'+uuid(),userId:u.id,name:u.name,phone:u.phone,status:'offline',rating:5,lat:null,lng:null,deliveries:0};db.drivers.push(d);u.driverId=d.id;}
  db.users.push(u);write(db);res.status(201).json({ok:true,user:{id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId}});
 });
