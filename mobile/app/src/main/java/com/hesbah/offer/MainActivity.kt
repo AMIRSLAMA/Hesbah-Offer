@@ -84,23 +84,49 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
 }
 @Composable fun Login(api:Api,onDone:()->Unit){
  var register by remember{mutableStateOf(false)}
- if(register){DriverRegistration(api){register=false};return}
+ if(register){
+  var name by remember{mutableStateOf("")};var phone by remember{mutableStateOf("")};var email by remember{mutableStateOf("")};var username by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var error by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
+  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center){
+   Text("إنشاء حساب عميل",style=MaterialTheme.typography.headlineMedium);Spacer(Modifier.height(12.dp))
+   listOf("الاسم" to {v:String->name=v},"رقم الهاتف" to {v:String->phone=v},"البريد الإلكتروني" to {v:String->email=v},"اسم المستخدم" to {v:String->username=v},"كلمة المرور" to {v:String->password=v}).forEachIndexed{idx,p->OutlinedTextField(value=listOf(name,phone,email,username,password)[idx],onValueChange=p.second,label={Text(p.first)},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp),visualTransformation=if(idx==4) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None)}
+   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
+   Button(onClick={scope.launch{try{val j=api.registerCustomer(name,phone,email,username,password);api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("إنشاء الحساب")}
+   TextButton(onClick={register=false}){Text("العودة للدخول")}
+  }
+  return
+ }
  var username by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var error by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center){
-   Text("HESBAH OFFER",style=MaterialTheme.typography.headlineLarge);Text("اطلبها. نجيبها.",style=MaterialTheme.typography.titleMedium);Spacer(Modifier.height(24.dp))
-   OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
-   OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth())
-   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
-   TextButton(onClick={register=true}){Text("تسجيل مندوب جديد")};Spacer(Modifier.height(8.dp));Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
- }
+  Text("HESBAH OFFER",style=MaterialTheme.typography.headlineLarge);Text("اطلبها. نجيبها.",style=MaterialTheme.typography.titleMedium);Spacer(Modifier.height(24.dp))
+  OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
+  OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth(),visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
+  if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};TextButton(onClick={register=true}){Text("تسجيل مندوب جديد")}}
+  Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
  }
 }
+data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
+
 @Composable fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
- var stores by remember{mutableStateOf(emptyList<JSONObject>())};var message by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
- LaunchedEffect(Unit){try{val j=api.call("/api/marketplace");val a=j.getJSONArray("stores");stores=(0 until a.length()).map{a.getJSONObject(it)}}catch(e:Exception){message=e.message?:"خطأ"}}
- Column(Modifier.fillMaxSize().padding(16.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("أهلاً \${s.name}",style=MaterialTheme.typography.titleLarge);TextButton(onClick=onLogout){Text("خروج")}}
- Text("المتاجر القريبة والعروض",style=MaterialTheme.typography.headlineSmall);if(message.isNotBlank())Text(message)
- LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(stores){st->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(16.dp)){Text(st.getString("name"),style=MaterialTheme.typography.titleLarge);Text(st.optString("category"));Text("⭐ "+st.optDouble("rating",0.0)+" • توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م");Button(onClick={scope.launch{message=try{api.call("/api/stores/"+st.getString("id"));"المتجر جاهز للعرض."}catch(e:Exception){e.message?:"خطأ"}}}){Text("فتح المتجر")}}}}}
+ var stores by remember{mutableStateOf(emptyList<JSONObject>())};var products by remember{mutableStateOf(emptyList<JSONObject>())};var selectedStore by remember{mutableStateOf<JSONObject?>(null)};var cart by remember{mutableStateOf(emptyList<CartLine>())};var address by remember{mutableStateOf("")};var paymentMethods by remember{mutableStateOf(emptyList<JSONObject>())};var payment by remember{mutableStateOf("")};var coupon by remember{mutableStateOf("")};var message by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
+ LaunchedEffect(Unit){try{val j=api.call("/api/marketplace");val a=j.getJSONArray("stores");stores=(0 until a.length()).map{a.getJSONObject(it)};val pm=api.call("/api/payment-methods").getJSONArray("paymentMethods");paymentMethods=(0 until pm.length()).map{pm.getJSONObject(it)};if(paymentMethods.isNotEmpty())payment=paymentMethods[0].getString("id")}catch(e:Exception){message=e.message?:"خطأ"}}
+ fun add(p:JSONObject,storeId:String){if(cart.isNotEmpty()&&cart[0].storeId!=storeId){message="السلة لا تجمع منتجات من متجرين";return};val id=p.getString("id");val old=cart.find{it.productId==id};cart=if(old==null)cart+CartLine(id,p.getString("name"),p.getDouble("price"),1,storeId) else cart.map{if(it.productId==id)it.copy(qty=it.qty+1)else it}}
+ fun checkout(){scope.launch{try{if(cart.isEmpty())throw Exception("السلة فارغة");if(address.isBlank())throw Exception("اكتب عنوان التوصيل");val items=org.json.JSONArray();cart.forEach{items.put(JSONObject().put("productId",it.productId).put("qty",it.qty))};val body=JSONObject().put("storeId",cart[0].storeId).put("items",items).put("address",address).put("paymentMethod",payment).put("coupon",coupon);val j=api.call("/api/orders","POST",body.toString());message="تم إنشاء الطلب #"+j.getJSONObject("order").getString("number");cart=emptyList()}catch(e:Exception){message=e.message?:"تعذر إنشاء الطلب"}}}
+ Column(Modifier.fillMaxSize().padding(16.dp)){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("أهلاً undefined",style=MaterialTheme.typography.titleLarge);TextButton(onClick=onLogout){Text("خروج")}}
+  if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.primary)
+  if(selectedStore==null){
+   Text("المتاجر والعروض",style=MaterialTheme.typography.headlineSmall)
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(stores){st->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(16.dp)){Text(st.getString("name"),style=MaterialTheme.typography.titleLarge);Text(st.optString("category"));Text("⭐ "+st.optDouble("rating",0.0)+" • توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م");Button(onClick={scope.launch{try{val j=api.call("/api/stores/"+st.getString("id"));selectedStore=st;val a=j.getJSONArray("products");products=(0 until a.length()).map{a.getJSONObject(it)}}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("فتح المتجر")}}}}}
+  }else{
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(selectedStore!!.getString("name"),style=MaterialTheme.typography.headlineSmall);TextButton(onClick={selectedStore=null}){Text("← المتاجر")}}
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),modifier=Modifier.weight(1f)){items(products.filter{it.optBoolean("available",false)&&it.optInt("stock",-1)!=0}){p->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(12.dp)){Text(p.getString("name"));Text(p.optString("description"));Text(p.getDouble("price").toString()+" ج.م");Button(onClick={add(p,selectedStore!!.getString("id"))}){Text("أضف للسلة")}}}}}
+   Text("السلة: "+cart.sumOf{it.qty}+" قطعة — "+cart.sumOf{it.price*it.qty}+" ج.م",style=MaterialTheme.typography.titleMedium)
+   OutlinedTextField(address,{address=it},label={Text("عنوان التوصيل")},modifier=Modifier.fillMaxWidth())
+   OutlinedTextField(coupon,{coupon=it},label={Text("كود الخصم")},modifier=Modifier.fillMaxWidth())
+   if(paymentMethods.isNotEmpty()){Text("طريقة الدفع");paymentMethods.forEach{pm->Row{RadioButton(selected=payment==pm.getString("id"),onClick={payment=pm.getString("id")});Text(pm.getString("name"))}}}
+   Button(onClick={::checkout},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")};Spacer(Modifier.height(8.dp))
+  }
  }
 }
 @Composable fun DriverHome(api:Api,s:Session,onLogout:()->Unit){
