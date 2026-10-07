@@ -123,6 +123,8 @@ router.get('/drivers',requireAuth,allow('admin','merchant'),(req,res)=>{
 });
 
 router.get('/orders/:id/tracking',requireAuth,(req,res)=>{const db=read(),o=db.orders.find(x=>x.id===req.params.id);if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});if(!visibleOrder(req,o))return res.status(403).json({ok:false,message:'غير مصرح'});const d=o.driverId?driverFor(db,o.driverId):null;res.json({ok:true,tracking:{active:['picked_up','out_for_delivery'].includes(o.status),status:o.status,customerLocation:{lat:o.lat??null,lng:o.lng??null,address:o.address||''},driver:d?{id:d.id,name:d.name,lat:d.lat??null,lng:d.lng??null,updatedAt:d.updatedAt||null}:null}});});
+
+router.patch('/drivers/me/location',requireAuth,allow('driver'),(req,res)=>{const db=read(),d=driverFor(db,req.user.driverId);if(!d)return res.status(404).json({ok:false,message:'المندوب غير موجود'});const o=db.orders.find(x=>x.driverId===d.id&&['picked_up','out_for_delivery'].includes(x.status));if(!o)return res.status(409).json({ok:false,message:'لا يوجد طلب توصيل نشط حالياً'});const lat=Number(req.body.lat),lng=Number(req.body.lng);if(!Number.isFinite(lat)||!Number.isFinite(lng))return res.status(400).json({ok:false,message:'إحداثيات الموقع غير صحيحة'});d.lat=lat;d.lng=lng;d.updatedAt=now();write(db);res.json({ok:true,location:{lat,lng,updatedAt:d.updatedAt},orderId:o.id});});
 router.patch('/drivers/me',requireAuth,allow('driver'),(req,res)=>{
  const db=read(),d=driverFor(db,req.user.driverId);if(!d)return res.status(404).json({ok:false});
  if(['available','offline'].includes(req.body.status)&&d.status!=='busy')d.status=req.body.status;
