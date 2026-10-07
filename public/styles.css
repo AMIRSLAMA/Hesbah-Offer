@@ -28,3 +28,19 @@
 .driver-page .driver-action-btn{width:100%;margin-top:12px;font-size:18px;padding:14px;border-radius:14px;background:#087c80;color:#fff;border:0;font-weight:900}
 .driver-page .driver-gps-inline{background:#eefafa;border:1px solid #b9e5e5;color:#087c80;border-radius:12px;padding:10px;font-weight:900;margin-top:12px}
 .driver-page .driver-access{border:1px solid #f3c6c6;background:#fff7f7}
+
+/* Customer orders redesign */
+.customer-page .customer-order-card{background:#fff;border:1px solid #eceff3;border-radius:22px;padding:18px;margin-bottom:14px;box-shadow:0 9px 28px #1110000b}
+.customer-page .customer-order-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.customer-page .customer-order-number{font-size:12px;color:#9a6a35;font-weight:900}
+.customer-page .customer-order-head h3{margin:5px 0 0;font-size:21px}
+.customer-page .customer-order-badge{background:#eaf8f1;color:#087c4c;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:900;white-space:nowrap}
+.customer-page .customer-order-badge.waiting{background:#fff4df;color:#a05b00}
+.customer-page .customer-order-progress{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:16px 0}
+.customer-page .customer-order-step{background:#f4f5f7;border:1px solid #e7e9ed;color:#a0a5ad;border-radius:10px;padding:8px 3px;text-align:center;font-size:10px;font-weight:900}
+.customer-page .customer-order-step.done{background:#eaf8f1;border-color:#bde8d2;color:#087c4c}
+.customer-page .customer-order-step.current{background:#ff6b00;border-color:#ff6b00;color:#fff;box-shadow:0 5px 14px #ff6b0030}
+.customer-page .customer-order-info{display:flex;flex-wrap:wrap;gap:8px;color:#5f6873;font-size:13px;padding-top:12px;border-top:1px solid #f0f1f3}
+.customer-page .customer-order-track{margin-top:12px}
+.customer-page .customer-orders-empty{background:#fff;border:1px dashed #dfe3e8;border-radius:20px;padding:30px;text-align:center;color:#68717d;font-weight:800}
+@media(max-width:600px){.customer-page .customer-order-head{display:block}.customer-page .customer-order-badge{display:inline-block;margin-top:10px}.customer-page .customer-order-progress{grid-template-columns:repeat(4,1fr)}}
