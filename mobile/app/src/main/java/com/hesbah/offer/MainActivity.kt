@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -24,15 +26,15 @@ class MainActivity: ComponentActivity(){
 @Composable fun HesbahApp(){
  var logged by remember{mutableStateOf(false)}
  var user by remember{mutableStateOf("")}
- if(!logged) LoginScreen{u->user=u;logged=true} else HomeScreen(user)
+ if(!logged) LoginScreen{u,p,onDone->CoroutineScope(Dispatchers.Main).launch{if(loginNative(u,p)){user=u;logged=true}else{} }} else HomeScreen(user)
 }
-@Composable fun LoginScreen(onLogin:(String)->Unit){
+@Composable fun LoginScreen(onLogin:(String,String,()->Unit)->Unit){
  var username by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var error by remember{mutableStateOf("")}
  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center){
   Text("HESBAH OFFER",style=MaterialTheme.typography.headlineLarge);Text("اطلبها. نجيبها.",style=MaterialTheme.typography.titleMedium)
   Spacer(Modifier.height(24.dp));OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
   Spacer(Modifier.height(10.dp));OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth())
-  Spacer(Modifier.height(18.dp));Button(onClick={if(username.isNotBlank()&&password.isNotBlank())onLogin(username)else error="أدخل البيانات"},modifier=Modifier.fillMaxWidth()){Text("دخول")}
+  Spacer(Modifier.height(18.dp));Button(onClick={if(username.isNotBlank()&&password.isNotBlank())onLogin(username,password,{})else error="أدخل البيانات"},modifier=Modifier.fillMaxWidth()){Text("دخول")}
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
  }
 }
@@ -46,3 +48,5 @@ class MainActivity: ComponentActivity(){
  }
 }
 fun loadStores():List<String>{return try{val c=OkHttpClient();val r=c.newCall(Request.Builder().url("$API/api/marketplace").build()).execute();val a=JSONArray(r.body?.string()?.let{org.json.JSONObject(it).getJSONArray("stores").toString()}?:"[]");List(a.length()){a.getJSONObject(it).getString("name")}}catch(e:Exception){listOf("تعذر الاتصال بالسيرفر — تأكد من عنوان API")}}
+
+fun loginNative(username:String,password:String):Boolean{return try{val c=OkHttpClient();val body=okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"),"""{"username":"$username","password":"$password"}""");val r=c.newCall(Request.Builder().url("$API/api/auth/login").post(body).build()).execute();r.isSuccessful}catch(e:Exception){false}}
