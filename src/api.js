@@ -1,8 +1,21 @@
 const express=require('express');
 const {v4:uuid}=require('uuid');
+const fs=require('fs');
+const path=require('path');
+const multer=require('multer');
 const {read,write}=require('./store');
 const {requireAuth,allow}=require('./auth');
 const router=express.Router();
+const privateDocsDir=path.join(__dirname,'..','data','private','driver-docs');
+fs.mkdirSync(privateDocsDir,{recursive:true});
+const upload=multer({
+ storage:multer.diskStorage({
+  destination:(_,__,cb)=>cb(null,privateDocsDir),
+  filename:(_,file,cb)=>cb(null,Date.now()+'-'+uuid()+path.extname(file.originalname).toLowerCase())
+ }),
+ limits:{fileSize:5*1024*1024},
+ fileFilter:(_,file,cb)=>/^image\/(jpeg|png|webp)$/.test(file.mimetype)?cb(null,true):cb(new Error('الملف يجب أن يكون صورة JPG أو PNG أو WEBP'))
+});
 const money=n=>Math.round(Number(n||0)*100)/100;
 const now=()=>new Date().toISOString();
 const activeStatuses=['pending','accepted','preparing','ready_for_pickup','driver_assigned','picked_up','out_for_delivery'];
@@ -203,6 +216,62 @@ router.post('/ratings',requireAuth,allow('customer'),(req,res)=>{
 });
 router.get('/notifications',requireAuth,(req,res)=>{const db=read();res.json({ok:true,notifications:db.notifications.filter(n=>n.userId===req.user.id).slice(-100).reverse()})});
 router.patch('/notifications/:id/read',requireAuth,(req,res)=>{const db=read(),n=db.notifications.find(x=>x.id===req.params.id&&x.userId===req.user.id);if(!n)return res.status(404).json({ok:false});n.read=true;write(db);res.json({ok:true})});
+
+
+// تسجيل المندوب: الطلب يظل قيد المراجعة حتى يعتمد من الإدارة.
+router.post('/driver-applications',
+ upload.fields([
+  {name:'selfie',maxCount:1},{name:'idFront',maxCount:1},{name:'idBack',maxCount:1},
+  {name:'drivingLicense',maxCount:1},{name:'vehicleLicense',maxCount:1}
+ ]),
+ (req,res)=>{
+  try{
+   const db=read(),b=req.body||{},files=req.files||{};
+   const required=['name','phone','nationalId','address','vehicleType','vehicleBrand','vehicleModel','vehiclePlate','consent'];
+   if(required.some(k=>!String(b[k]||'').trim())||String(b.consent)!=='yes')return res.status(400).json({ok:false,message:'أكمل بيانات التحقق والموافقة المطلوبة'});
+   if(String(b.nationalId).trim().length<10)return res.status(400).json({ok:false,message:'رقم البطاقة غير صحيح'});
+   for(const key of ['selfie','idFront','idBack','drivingLicense','vehicleLicense'])if(!files[key]?.[0])return res.status(400).json({ok:false,message:'كل صور التحقق مطلوبة'});
+   if(db.driverApplications?.some(x=>x.nationalId===String(b.nationalId).trim()&&['pending','approved'].includes(x.status)))return res.status(409).json({ok:false,message:'يوجد طلب تسجيل قائم بهذا الرقم'});
+   db.driverApplications=db.driverApplications||[];
+   const id='da_'+uuid(),createdAt=now();
+   const app={id,name:String(b.name).trim(),phone:String(b.phone).trim(),nationalId:String(b.nationalId).trim(),address:String(b.address).trim(),
+    vehicleType:String(b.vehicleType).trim(),vehicleBrand:String(b.vehicleBrand).trim(),vehicleModel:String(b.vehicleModel).trim(),vehiclePlate:String(b.vehiclePlate).trim(),
+    notes:String(b.notes||'').trim(),status:'pending',createdAt,updatedAt:createdAt,
+    consentAt:createdAt,consentVersion:'driver-verification-v1',ip:req.ip||'',userAgent:req.get('user-agent')||'',
+    documents:Object.fromEntries(['selfie','idFront','idBack','drivingLicense','vehicleLicense'].map(k=>[k,{filename:files[k][0].filename,originalName:files[k][0].originalname,mime:files[k][0].mimetype,size:files[k][0].size}])),
+    userId:null,driverId:null};
+   db.driverApplications.push(app);write(db);
+   res.status(201).json({ok:true,applicationId:id,status:'pending',message:'تم إرسال طلبك وسيتم مراجعته قبل تفعيل الحساب'});
+  }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إرسال الطلب'});}
+ });
+router.get('/driver-applications',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),apps=(db.driverApplications||[]).slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+ res.json({ok:true,applications:apps.map(x=>({...x,documents:Object.fromEntries(Object.entries(x.documents||{}).map(([k,v])=>[k,{name:v.originalName,size:v.size}]))}))});
+});
+router.get('/driver-applications/:id/document/:type',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),app=(db.driverApplications||[]).find(x=>x.id===req.params.id),doc=app?.documents?.[req.params.type];
+ if(!doc)return res.status(404).json({ok:false,message:'المستند غير موجود'});
+ const file=path.join(privateDocsDir,path.basename(doc.filename));
+ if(!fs.existsSync(file))return res.status(404).json({ok:false,message:'ملف المستند غير موجود'});
+ res.setHeader('Content-Disposition','inline; filename="'+String(doc.originalName).replace(/["\\]/g,'')+'"');res.sendFile(file);
+});
+router.patch('/driver-applications/:id',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),app=(db.driverApplications||[]).find(x=>x.id===req.params.id),next=String(req.body.status||'');
+ if(!app)return res.status(404).json({ok:false,message:'طلب التسجيل غير موجود'});
+ if(!['pending','approved','rejected'].includes(next))return res.status(400).json({ok:false,message:'حالة غير صحيحة'});
+ if(app.status==='approved'&&next!=='approved')return res.status(400).json({ok:false,message:'لا يمكن إلغاء اعتماد طلب مفعل'});
+ if(next==='approved'&&app.status!=='approved'){
+  const username=String(req.body.username||'').trim(),password=String(req.body.password||'');
+  if(username.length<4||password.length<6)return res.status(400).json({ok:false,message:'عند الاعتماد أدخل اسم مستخدم وكلمة مرور صالحين'});
+  if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase()))return res.status(409).json({ok:false,message:'اسم المستخدم مستخدم بالفعل'});
+  const userId='u_'+uuid(),driverId='d_'+uuid();
+  const u={id:userId,name:app.name,phone:app.phone,username,password:require('bcryptjs').hashSync(password,10),role:'driver',driverId,createdAt:now()};
+  const d={id:driverId,userId,name:app.name,phone:app.phone,status:'offline',rating:5,lat:null,lng:null,deliveries:0,nationalId:app.nationalId,vehicleType:app.vehicleType,vehicleBrand:app.vehicleBrand,vehicleModel:app.vehicleModel,vehiclePlate:app.vehiclePlate};
+  db.users.push(u);db.drivers.push(d);app.userId=userId;app.driverId=driverId;
+ }
+ app.status=next;app.reviewedAt=now();app.reviewedBy=req.user.id;app.updatedAt=app.reviewedAt;app.reviewNote=String(req.body.note||'');
+ write(db);res.json({ok:true,application:{id:app.id,status:app.status,userId:app.userId,driverId:app.driverId}});
+});
 
 router.get('/users',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,users:db.users.map(u=>({id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId,createdAt:u.createdAt}))});});
 router.post('/users',requireAuth,allow('admin'),(req,res)=>{
