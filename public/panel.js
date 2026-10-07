@@ -56,6 +56,14 @@ async function reviewDriver(id,status){
   loadDriverApplications();loadDrivers();
  }catch(e){alert(e.message)}
 }
+function exportDriverApplications(){
+ apiP('/driver-applications').then(d=>{
+  const headers=['ID','الاسم','الهاتف','الرقم القومي','العنوان','نوع المركبة','الماركة','الموديل','اللوحة','الحالة','تاريخ التقديم','IP','تاريخ المراجعة','المراجع'];
+  const rows=d.applications.map(x=>[x.id,x.name,x.phone,x.nationalId,x.address,x.vehicleType,x.vehicleBrand,x.vehicleModel,x.vehiclePlate,x.status,x.createdAt,x.ip||'',x.reviewedAt||'',x.reviewedBy||'']);
+  const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv='\\uFEFF'+[headers,...rows].map(r=>r.map(esc).join(',')).join('\\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='hesbah-driver-verification.csv';a.click();
+ }).catch(e=>alert(e.message));
+}
 async function loadDrivers(){try{const d=await apiP('/drivers');document.querySelector('#orders').innerHTML=d.drivers.map(x=>`<div class="card"><h3>${x.name}</h3><p>⭐ ${x.rating} · ${x.deliveries||0} توصيل</p><p>الحالة: <span class="status">${x.status}</span></p><p>GPS: ${x.lat??'-'}, ${x.lng??'-'}</p></div>`).join('')}catch(e){alert(e.message)}}
 async function loadFinance(){try{const d=await apiP('/finance');const role=currentRole();const extra=role==='admin'?`<div class="card"><h3>عمولة Hesbah</h3><strong>${fmt(d.summary.commission)}</strong></div>`:role==='driver'?`<div class="card"><h3>مستحقات التوصيل</h3><strong>${fmt(d.summary.earnings)}</strong></div>`:`<div class="card"><h3>صافي المستحق</h3><strong>${fmt(d.summary.merchantNet)}</strong></div>`;document.querySelector('#orders').innerHTML=`<div class="grid"><div class="card"><h3>صافي المبيعات</h3><strong>${fmt(d.summary.subtotal)}</strong></div><div class="card"><h3>التوصيل</h3><strong>${fmt(d.summary.delivery)}</strong></div>${extra}</div>`}catch(e){alert(e.message)}}
 const path=location.pathname;
