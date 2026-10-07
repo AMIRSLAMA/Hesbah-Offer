@@ -14,6 +14,16 @@ function notify(db,userId,title,body){if(!userId)return;db.notifications.push({i
 function user(db,id){return db.users.find(x=>x.id===id)}
 function storeFor(db,id){return db.stores.find(x=>x.id===id)}
 function driverFor(db,id){return db.drivers.find(x=>x.id===id)}
+function publicStore(s){if(!s)return s;const {commission,...safe}=s;return safe;}
+function visibleOrderData(req,o){
+ const safe={...o};
+ if(req.user.role!=='admin'){
+  delete safe.commissionRate;
+  delete safe.commission;
+  delete safe.merchantNet;
+ }
+ return safe;
+}
 function addLedger(db,entry){db.ledger=db.ledger||[];db.ledger.push({id:uuid(),createdAt:now(),...entry});}
 function visibleOrder(req,o){
  if(req.user.role==='admin')return true;
@@ -27,11 +37,11 @@ router.get('/marketplace',(req,res)=>{
  let stores=db.stores.filter(s=>s.isOpen);
  if(cat)stores=stores.filter(s=>s.category===cat);
  if(q)stores=stores.filter(s=>(s.name+' '+s.description+' '+s.category).toLowerCase().includes(q));
- res.json({ok:true,stores,categories:[...new Set(db.stores.map(s=>s.category).filter(Boolean))],settings:{currency:db.settings.currency}});
+ res.json({ok:true,stores:stores.map(publicStore),categories:[...new Set(db.stores.map(s=>s.category).filter(Boolean))],settings:{currency:db.settings.currency}});
 });
 router.get('/stores/:id',(req,res)=>{
  const db=read(),s=storeFor(db,req.params.id);if(!s)return res.status(404).json({ok:false,message:'المتجر غير موجود'});
- res.json({ok:true,store:s,products:db.products.filter(p=>p.storeId===s.id)});
+ res.json({ok:true,store:publicStore(s),products:db.products.filter(p=>p.storeId===s.id)});
 });
 router.get('/products',(req,res)=>{
  const db=read();let p=db.products;
@@ -43,12 +53,12 @@ router.get('/products',(req,res)=>{
 router.get('/orders',requireAuth,(req,res)=>{
  const db=read();let o=db.orders.filter(x=>visibleOrder(req,x));
  if(req.query.status)o=o.filter(x=>x.status===req.query.status);
- res.json({ok:true,orders:o.sort((a,b)=>b.createdAt.localeCompare(a.createdAt))});
+ res.json({ok:true,orders:o.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(o=>visibleOrderData(req,o))});
 });
 router.get('/orders/:id',requireAuth,(req,res)=>{
  const db=read(),o=db.orders.find(x=>x.id===req.params.id);if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});
  if(!visibleOrder(req,o))return res.status(403).json({ok:false,message:'غير مصرح'});
- res.json({ok:true,order:o,driver:o.driverId?driverFor(db,o.driverId):null});
+ res.json({ok:true,order:visibleOrderData(req,o),driver:o.driverId?driverFor(db,o.driverId):null});
 });
 router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
  try{
@@ -81,7 +91,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
   notify(db,req.user.id,'تم استلام طلبك','رقم الطلب '+o.number);
   notify(db,store.ownerUserId,'طلب جديد','لديك طلب جديد رقم '+o.number);
   addLedger(db,{type:'order',orderId:o.id,storeId,customerId:req.user.id,subtotal:netSubtotal,commission,merchantNet,delivery,driverEarning:delivery});
-  write(db);res.status(201).json({ok:true,order:o});
+  write(db);res.status(201).json({ok:true,order:visibleOrderData(req,o)});
  }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إنشاء الطلب'});}
 });
 router.patch('/orders/:id/status',requireAuth,allow('admin','merchant','driver','customer'),(req,res)=>{
@@ -106,7 +116,7 @@ router.post('/orders/:id/assign-driver',requireAuth,allow('admin','merchant'),(r
  if(o.driverId&&o.driverId!==d.id){const old=driverFor(db,o.driverId);if(old)old.status='available';}
  o.driverId=d.id;o.status='driver_assigned';o.updatedAt=now();o.timeline.push({status:o.status,at:o.updatedAt,by:req.user.id});
  d.status='busy';notify(db,d.userId,'مهمة توصيل جديدة','تم إسناد الطلب '+o.number+' إليك');notify(db,o.customerId,'تم تعيين المندوب','جارٍ تجهيز التوصيل');
- write(db);res.json({ok:true,order:o,driver:d});
+ write(db);res.json({ok:true,order:visibleOrderData(req,o),driver:d});
 });
 router.get('/drivers',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read();res.json({ok:true,drivers:db.drivers.map(d=>({...d,user:undefined}))});
@@ -134,8 +144,14 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  const db=read();let orders=db.orders.filter(o=>o.status==='delivered');
  if(req.user.role==='merchant')orders=orders.filter(o=>o.storeId===req.user.storeId);
  if(req.user.role==='driver')orders=orders.filter(o=>o.driverId===req.user.driverId);
- const summary={orders:orders.length,subtotal:money(orders.reduce((a,o)=>a+o.subtotal-o.discount,0)),commission:money(orders.reduce((a,o)=>a+o.commission,0)),delivery:money(orders.reduce((a,o)=>a+o.delivery,0)),merchantNet:money(orders.reduce((a,o)=>a+o.merchantNet,0))};
- res.json({ok:true,summary,settlements:db.settlements.filter(s=>req.user.role==='admin'||(req.user.role==='merchant'&&s.ownerId===req.user.storeId)||(req.user.role==='driver'&&s.ownerId===req.user.driverId))});
+ const subtotal=money(orders.reduce((a,o)=>a+o.subtotal-o.discount,0));
+ const delivery=money(orders.reduce((a,o)=>a+o.delivery,0));
+ const summary=req.user.role==='admin'
+  ? {orders:orders.length,subtotal,commission:money(orders.reduce((a,o)=>a+o.commission,0)),delivery,merchantNet:money(orders.reduce((a,o)=>a+o.merchantNet,0))}
+  : req.user.role==='merchant'
+    ? {orders:orders.length,subtotal,delivery,merchantNet:money(orders.reduce((a,o)=>a+o.merchantNet,0))}
+    : {orders:orders.length,delivery,earnings:delivery};
+ res.json({ok:true,summary,settlements:db.settlements.filter(x=>req.user.role==='admin'||(req.user.role==='merchant'&&x.ownerId===req.user.storeId)||(req.user.role==='driver'&&x.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
 router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled)}));
