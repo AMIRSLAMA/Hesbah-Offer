@@ -14,5 +14,6 @@ async function login(){try{const d=await api('/auth/login',{method:'POST',body:J
 async function register(){try{const d=await api('/auth/register',{method:'POST',body:JSON.stringify({name:$('#rname').value,phone:$('#rphone').value,username:$('#ruser').value,password:$('#rpass').value})});setUser(d)}catch(e){alert(e.message)}}
 function logout(){localStorage.clear();location.href='/'}
 window.openStore=openStore;window.addCart=addCart;window.renderCart=renderCart;window.checkout=checkout;window.loadOrders=loadOrders;window.login=login;window.register=register;window.logout=logout;window.accountAction=accountAction;window.trackCustomerOrder=trackCustomerOrder;
-async function loadPaymentMethods(){const box=$('#payment');if(!box)return;try{const d=await api('/payment-methods');box.innerHTML=d.paymentMethods.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('')}catch(e){}}
+let paymentMethods=[];async function loadPaymentMethods(){const box=$('#payment');if(!box)return;try{const d=await api('/payment-methods');paymentMethods=d.paymentMethods||[];box.innerHTML=paymentMethods.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('');updatePaymentInfo()}catch(e){}}function updatePaymentInfo(){const p=paymentMethods.find(x=>x.id===$('#payment')?.value);if($('#paymentInfo'))$('#paymentInfo').textContent=p?.instructions||''}
 if($('#stores')){loadMarket();loadPaymentMethods()}if($('#myOrders'))loadOrders();
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='payment')updatePaymentInfo()});
