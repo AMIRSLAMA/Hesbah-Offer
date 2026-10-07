@@ -4,6 +4,7 @@ async function apiP(url,opt={}){if(!token())return location.href='/';opt.headers
 function logout(){localStorage.clear();location.href='/'}
 function fmt(n){return Number(n||0).toFixed(0)+' ج.م'}
 let activeView='orders';
+let ordersLoadSeq=0;
 async function loadCustomers(){activeView='customers';try{const d=await apiP('/users');const customers=d.users.filter(x=>x.role==='customer');document.querySelector('#orders').innerHTML=customers.length?customers.map(x=>'<div class="card"><h3>'+x.name+'</h3><p>📱 '+(x.phone||'-')+' · ✉️ '+(x.email||'-')+'</p><p>اسم المستخدم: '+x.username+'</p><p class="muted">آخر دخول: '+(x.lastLoginAt||'لم يسجل دخول بعد')+'</p></div>').join(''):'<div class="card">لا يوجد عملاء.</div>'}catch(e){alert(e.message)}}
 async function loadPaymentSettings(){activeView='payments';try{const d=await apiP('/settings');const m=d.settings.paymentMethods||[];document.querySelector('#orders').innerHTML='<div class="card"><h2>طرق الدفع</h2>'+m.map((x,i)=>'<div class="card" style="margin:10px 0"><label><input type="checkbox" id="pm-'+i+'" '+(x.enabled?'checked':'')+'> تفعيل</label><input id="pmn-'+i+'" class="input" value="'+String(x.name||'').replace(/"/g,'&quot;')+'" placeholder="اسم الطريقة"><input id="pmi-'+i+'" class="input" value="'+String(x.instructions||'').replace(/"/g,'&quot;')+'" placeholder="تعليمات العميل" style="margin-top:8px"></div>').join('')+'<button class="btn" onclick="savePaymentSettings()">حفظ طرق الدفع</button></div>'}catch(e){alert(e.message)}}
 async function savePaymentSettings(){try{const d=await apiP('/settings');const m=d.settings.paymentMethods||[];const paymentMethods=m.map((x,i)=>({id:x.id,name:document.querySelector('#pmn-'+i).value.trim(),enabled:document.querySelector('#pm-'+i).checked,instructions:document.querySelector('#pmi-'+i).value.trim()}));await apiP('/settings',{method:'PATCH',body:JSON.stringify({paymentMethods})});alert('تم حفظ طرق الدفع');loadPaymentSettings()}catch(e){alert(e.message)}}
@@ -20,8 +21,8 @@ async function trackOrder(id){
   box.innerHTML='<b>📍 المندوب: '+t.driver.name+'</b><p>الحالة: '+statusAr(t.status)+' · آخر تحديث: '+(t.driver.updatedAt||'-')+'</p><iframe title="خريطة المندوب" style="width:100%;height:260px;border:0;border-radius:12px" src="https://www.openstreetmap.org/export/embed.html?bbox='+(lng-0.01)+'%2C'+(lat-0.01)+'%2C'+(lng+0.01)+'%2C'+(lat+0.01)+'&layer=mapnik&marker='+lat+'%2C'+lng+'"></iframe>';
  }catch(e){alert(e.message)}
 }
-async function loadOrders(){activeView='orders';
- try{const d=await apiP('/orders');const box=document.querySelector('#orders'),role=currentRole();
+async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
+ try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();
  box.innerHTML=d.orders.length?d.orders.map(o=>{
  const driver=role==='driver';
  const action=driver?({'driver_assigned':['picked_up','تم الاستلام'],'picked_up':['out_for_delivery','في الطريق'],'out_for_delivery':['delivered','تم التسليم']}[o.status]||null):(role==='merchant'?({pending:['accepted','قبول الطلب'],accepted:['preparing','جاري التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[o.status]||null):null);
