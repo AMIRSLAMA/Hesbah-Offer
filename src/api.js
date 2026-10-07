@@ -142,7 +142,7 @@ router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read(
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
- if(req.body.currency)db.settings.currency=String(req.body.currency);
+ if(req.body.currency)db.settings.currency=String(req.body.currency);if(Array.isArray(req.body.paymentMethods))db.settings.paymentMethods=req.body.paymentMethods.map(x=>({id:String(x.id),name:String(x.name),enabled:Boolean(x.enabled)}));
  write(db);res.json({ok:true,settings:db.settings});
 });
 router.get('/stores',requireAuth,allow('admin','merchant'),(req,res)=>{
