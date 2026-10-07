@@ -138,6 +138,7 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  res.json({ok:true,summary,settlements:db.settlements.filter(s=>req.user.role==='admin'||s.ownerId===req.user.id)});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
+router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled)}));
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
