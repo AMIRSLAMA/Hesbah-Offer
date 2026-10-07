@@ -1,5 +1,19 @@
 const token=()=>localStorage.hesbahToken||'';
-function currentRole(){try{return JSON.parse(atob((token().split('.')[1]||'').replace(/-/g,'+').replace(/_/g,'/'))).role||''}catch{return ''}}
+function currentRole(){
+  try{
+    const raw=token().split('.')[1]||'';
+    const normalized=raw.replace(/-/g,'+').replace(/_/g,'/');
+    const padded=normalized+'='.repeat((4-normalized.length%4)%4);
+    const payload=JSON.parse(atob(padded));
+    if(payload.role)return payload.role;
+  }catch{}
+  try{
+    const u=JSON.parse(localStorage.hesbahUser||'null');
+    if(u?.role)return u.role;
+  }catch{}
+  return '';
+}
+function roleAr(role){return ({admin:'مدير النظام',merchant:'التاجر',driver:'مندوب التوصيل',customer:'العميل'})[role]||'غير معروف';}
 async function apiP(url,opt={}){if(!token())return location.href='/';opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token(),'Content-Type':'application/json'};const r=await fetch('/api'+url,opt);const j=await r.json();if(r.status===401){localStorage.clear();location.href='/'}if(!r.ok)throw new Error(j.message||'خطأ');return j}
 function logout(){localStorage.clear();location.href='/'}
 function fmt(n){return Number(n||0).toFixed(0)+' ج.م'}
@@ -42,6 +56,7 @@ async function trackOrder(id){
 }
 async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
  try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();
+  if(!role){box.innerHTML='<div class="card"><h3>⚠️ لم يتم تحديد صلاحية الحساب</h3><p class="muted">سجّل الدخول بحساب التاجر أو المندوب ثم أعد فتح الصفحة.</p></div>';return;}
  if(role==='driver'){
   let gps=document.querySelector('#driver-gps-status');
   if(!gps){gps=document.createElement('div');gps.id='driver-gps-status';gps.className='card';gps.style.marginBottom='12px';box.parentNode.insertBefore(gps,box);}
@@ -50,7 +65,7 @@ async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
  box.innerHTML=d.orders.length?d.orders.map(o=>{
  const driver=role==='driver';
  const action=nextAction(role,o.status);
- return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div>${stageBar(o.status)}<p><b>الخطوة الحالية:</b> ${statusAr(o.status)}</p>${action?`<p class="muted">الإجراء المطلوب الآن: ${action[1]}</p>`:''}<p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
+ return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div><p class="muted">👤 عرض حسب صلاحية: <b>${roleAr(role)}</b></p>${stageBar(o.status)}<p><b>الخطوة الحالية:</b> ${statusAr(o.status)}</p>${action?`<p class="muted">الإجراء المطلوب الآن: ${action[1]}</p>`:''}<p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
 }
 let driverGpsWatch=null;
 let driverGpsLastSent=0;
