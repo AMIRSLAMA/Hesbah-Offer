@@ -11,6 +11,25 @@ async function savePaymentSettings(){try{const d=await apiP('/settings');const m
 async function loadDeleteRequests(){activeView='deleteRequests';try{const d=await apiP('/customer-delete-requests');document.querySelector('#orders').innerHTML=d.requests.length?d.requests.map(x=>'<div class="card"><h3>'+x.name+'</h3><p>📱 '+(x.phone||'-')+' · ✉️ '+(x.email||'-')+'</p><p>طلب الحذف: '+x.requestedAt+'</p><p class="muted">'+(x.note||'')+'</p><button class="btn" onclick="reviewDelete(\''+x.id+'\',\'approve\')">موافقة وحذف</button> <button class="btn" onclick="reviewDelete(\''+x.id+'\',\'reject\')">رفض الطلب</button></div>').join(''):'<div class="card">لا توجد طلبات حذف.</div>'}catch(e){alert(e.message)}}
 async function reviewDelete(id,action){try{await apiP('/customer-delete-requests/'+id,{method:'PATCH',body:JSON.stringify({action})});loadDeleteRequests()}catch(e){alert(e.message)}}
 function statusAr(s){return ({pending:'تم استلام الطلب',accepted:'تم قبول الطلب',preparing:'جاري التجهيز',ready_for_pickup:'جاهز للاستلام',driver_assigned:'تم تعيين المندوب',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي'})[s]||s}
+const orderStages=[
+ ['pending','تم الاستلام'],
+ ['accepted','تم قبول الطلب'],
+ ['preparing','جاري التجهيز'],
+ ['ready_for_pickup','جاهز للاستلام'],
+ ['driver_assigned','تم تعيين المندوب'],
+ ['picked_up','استلم المندوب الطلب'],
+ ['out_for_delivery','في الطريق'],
+ ['delivered','تم التسليم']
+];
+function stageBar(status){
+ const current=orderStages.findIndex(x=>x[0]===status);
+ return '<div class="order-stages">'+orderStages.map((x,i)=>'<span class="'+(i<current?'done ':i===current?'current ':'')+'">'+x[1]+'</span>').join('')+'</div>';
+}
+function nextAction(role,status){
+ if(role==='merchant')return ({pending:['accepted','قبول الطلب'],accepted:['preparing','بدء التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[status]||null);
+ if(role==='driver')return ({driver_assigned:['picked_up','استلام الطلب'],picked_up:['out_for_delivery','بدء التوصيل'],out_for_delivery:['delivered','تأكيد التسليم']}[status]||null);
+ return null;
+}
 async function trackOrder(id){
  try{
   const d=await apiP('/orders/'+id+'/tracking'),t=d.tracking;
@@ -25,8 +44,8 @@ async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
  try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();
  box.innerHTML=d.orders.length?d.orders.map(o=>{
  const driver=role==='driver';
- const action=driver?({'driver_assigned':['picked_up','تم الاستلام'],'picked_up':['out_for_delivery','في الطريق'],'out_for_delivery':['delivered','تم التسليم']}[o.status]||null):(role==='merchant'?({pending:['accepted','قبول الطلب'],accepted:['preparing','جاري التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[o.status]||null):null);
- return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div><p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
+ const action=nextAction(role,o.status);
+ return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div>${stageBar(o.status)}<p><b>الخطوة الحالية:</b> ${statusAr(o.status)}</p>${action?`<p class="muted">الإجراء المطلوب الآن: ${action[1]}</p>`:''}<p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
 }
 async function setStatus(id,status){if(!status)return;try{await apiP('/orders/'+id+'/status',{method:'PATCH',body:JSON.stringify({status})});loadOrders()}catch(e){alert(e.message)}}
 async function assignDriver(id){try{const d=await apiP('/drivers');const free=d.drivers.filter(x=>x.status==='available');if(!free.length)return alert('لا يوجد مندوب متاح حالياً');const names=free.map((x,i)=>`${i+1}) ${x.name} — ${x.status} — ⭐${x.rating}`).join('\n');const pick=Number(prompt('اختر رقم المندوب:\n'+names));if(!pick||!free[pick-1])return;await apiP('/orders/'+id+'/assign-driver',{method:'POST',body:JSON.stringify({driverId:free[pick-1].id})});loadOrders()}catch(e){alert(e.message)}}
