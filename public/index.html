@@ -43,18 +43,8 @@ function translatePage(lang){
   document.querySelectorAll('.hc-language').forEach(b=>{
     b.innerHTML=isEn?'العربية <span>⌄</span>':'EN <span>⌄</span>';
   });
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  const nodes=[];
-  while(walker.nextNode()) nodes.push(walker.currentNode);
-  nodes.forEach(n=>{
-    if(!n.parentElement) return;
-    if(!n.parentElement.dataset.hesbahAr) n.parentElement.dataset.hesbahAr=n.nodeValue;
-    const ar=n.parentElement.dataset.hesbahAr;
-    const trimmed=ar.trim();
-    const translated=hesbahEN[trimmed];
-    if(isEn && translated) n.nodeValue=n.nodeValue.replace(trimmed,translated);
-    else if(!isEn) n.nodeValue=ar;
-  });
+  const nodes=document.querySelectorAll('[data-i18n]');
+  nodes.forEach(el=>{const ar=el.dataset.i18n;if(ar)el.textContent=isEn?(hesbahEN[ar]||ar):ar;});
   document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{
     if(!el.dataset.hesbahAr) el.dataset.hesbahAr=el.placeholder;
     const ar=el.dataset.hesbahAr;
