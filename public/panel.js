@@ -26,6 +26,36 @@ async function assignDriver(id){try{const d=await apiP('/drivers');const free=d.
 async function loadDashboard(){
  try{const d=await apiP('/dashboard');document.querySelector('#kpis').innerHTML=Object.entries({الطلبات:d.stats.orders,'قيد التنفيذ':d.stats.pending,'المبيعات':fmt(d.stats.revenue),'عمولات Hesbah':fmt(d.stats.commissions),'صافي التجار':fmt(d.stats.merchantNet)}).map(([k,v])=>`<div class="card kpi"><span class="muted">${k}</span><strong>${v}</strong></div>`).join('');loadOrders()}catch(e){alert(e.message)}
 }
+async function viewDriverDoc(id,type){
+ try{
+  const r=await fetch('/api/driver-applications/'+id+'/document/'+type,{headers:{Authorization:'Bearer '+token()}});
+  if(!r.ok)throw new Error('تعذر فتح المستند');
+  const blob=await r.blob(),url=URL.createObjectURL(blob);window.open(url,'_blank');
+ }catch(e){alert(e.message)}
+}
+async function loadDriverApplications(){
+ try{
+  const d=await apiP('/driver-applications'),box=document.querySelector('#driverApplications');
+  if(!d.applications.length){box.innerHTML='<p class="muted">لا توجد طلبات تسجيل مندوبين.</p>';return}
+  const labels={selfie:'سيلفي',idFront:'البطاقة - وجه',idBack:'البطاقة - ظهر',drivingLicense:'رخصة القيادة',vehicleLicense:'رخصة المركبة'};
+  box.innerHTML=d.applications.map(x=>{
+   const docs=Object.keys(x.documents||{}).map(k=>`<button class="btn" onclick="viewDriverDoc('${x.id}','${k}')">${labels[k]||k}</button>`).join(' ');
+   const action=x.status==='pending'?`<button class="btn" onclick="reviewDriver('${x.id}','approved')">اعتماد وتفعيل</button><button class="btn" onclick="reviewDriver('${x.id}','rejected')">رفض</button>`:x.status==='approved'?'<b>تم الاعتماد والتفعيل</b>':'<b>مرفوض</b>';
+   return `<div class="card"><div class="row"><h3>${x.name}</h3><span class="status">${x.status}</span></div><p><b>الهاتف:</b> ${x.phone} · <b>الرقم القومي:</b> ${x.nationalId}</p><p><b>العنوان:</b> ${x.address}</p><p><b>المركبة:</b> ${x.vehicleType} — ${x.vehicleBrand} — ${x.vehicleModel} — لوحة ${x.vehiclePlate}</p><p class="muted">تقديم: ${x.createdAt} · IP: ${x.ip||'-'}</p><div class="row" style="gap:6px;flex-wrap:wrap">${docs}</div><div style="margin-top:10px">${action}</div></div>`;
+  }).join('');
+ }catch(e){alert(e.message)}
+}
+async function reviewDriver(id,status){
+ try{
+  if(status==='rejected'){const note=prompt('سبب الرفض (اختياري):')||'';await apiP('/driver-applications/'+id,{method:'PATCH',body:JSON.stringify({status,note})});}
+  else{
+   const username=prompt('اسم المستخدم للمندوب الجديد:');if(!username)return;
+   const password=prompt('كلمة المرور (6 أحرف على الأقل):');if(!password)return;
+   await apiP('/driver-applications/'+id,{method:'PATCH',body:JSON.stringify({status,username,password})});
+  }
+  loadDriverApplications();loadDrivers();
+ }catch(e){alert(e.message)}
+}
 async function loadDrivers(){try{const d=await apiP('/drivers');document.querySelector('#orders').innerHTML=d.drivers.map(x=>`<div class="card"><h3>${x.name}</h3><p>⭐ ${x.rating} · ${x.deliveries||0} توصيل</p><p>الحالة: <span class="status">${x.status}</span></p><p>GPS: ${x.lat??'-'}, ${x.lng??'-'}</p></div>`).join('')}catch(e){alert(e.message)}}
 async function loadFinance(){try{const d=await apiP('/finance');const role=currentRole();const extra=role==='admin'?`<div class="card"><h3>عمولة Hesbah</h3><strong>${fmt(d.summary.commission)}</strong></div>`:role==='driver'?`<div class="card"><h3>مستحقات التوصيل</h3><strong>${fmt(d.summary.earnings)}</strong></div>`:`<div class="card"><h3>صافي المستحق</h3><strong>${fmt(d.summary.merchantNet)}</strong></div>`;document.querySelector('#orders').innerHTML=`<div class="grid"><div class="card"><h3>صافي المبيعات</h3><strong>${fmt(d.summary.subtotal)}</strong></div><div class="card"><h3>التوصيل</h3><strong>${fmt(d.summary.delivery)}</strong></div>${extra}</div>`}catch(e){alert(e.message)}}
 const path=location.pathname;
