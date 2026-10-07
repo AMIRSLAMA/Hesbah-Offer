@@ -54,7 +54,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
  try{
   const db=read(),{storeId,items,address,paymentMethod='cash',coupon,lat,lng}=req.body||{};
   if(!storeId||!Array.isArray(items)||!items.length||!address)return res.status(400).json({ok:false,message:'اختر المنتجات والعنوان'});
-  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});
+  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});const methods=db.settings.paymentMethods||[];if(!methods.some(x=>x.id===paymentMethod&&x.enabled))return res.status(400).json({ok:false,message:'طريقة الدفع غير متاحة حالياً'});
   let subtotal=0;
   const lines=items.map(i=>{
    const p=db.products.find(x=>x.id===i.productId&&x.storeId===storeId&&x.available);
