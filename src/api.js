@@ -121,6 +121,8 @@ router.post('/orders/:id/assign-driver',requireAuth,allow('admin','merchant'),(r
 router.get('/drivers',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read();res.json({ok:true,drivers:db.drivers.map(d=>({...d,user:undefined}))});
 });
+
+router.get('/orders/:id/tracking',requireAuth,(req,res)=>{const db=read(),o=db.orders.find(x=>x.id===req.params.id);if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});if(!visibleOrder(req,o))return res.status(403).json({ok:false,message:'غير مصرح'});const d=o.driverId?driverFor(db,o.driverId):null;res.json({ok:true,tracking:{active:['picked_up','out_for_delivery'].includes(o.status),status:o.status,customerLocation:{lat:o.lat??null,lng:o.lng??null,address:o.address||''},driver:d?{id:d.id,name:d.name,lat:d.lat??null,lng:d.lng??null,updatedAt:d.updatedAt||null}:null}});});
 router.patch('/drivers/me',requireAuth,allow('driver'),(req,res)=>{
  const db=read(),d=driverFor(db,req.user.driverId);if(!d)return res.status(404).json({ok:false});
  if(['available','offline'].includes(req.body.status)&&d.status!=='busy')d.status=req.body.status;
