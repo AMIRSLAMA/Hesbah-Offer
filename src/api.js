@@ -135,7 +135,7 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  if(req.user.role==='merchant')orders=orders.filter(o=>o.storeId===req.user.storeId);
  if(req.user.role==='driver')orders=orders.filter(o=>o.driverId===req.user.driverId);
  const summary={orders:orders.length,subtotal:money(orders.reduce((a,o)=>a+o.subtotal-o.discount,0)),commission:money(orders.reduce((a,o)=>a+o.commission,0)),delivery:money(orders.reduce((a,o)=>a+o.delivery,0)),merchantNet:money(orders.reduce((a,o)=>a+o.merchantNet,0))};
- res.json({ok:true,summary,settlements:db.settlements.filter(s=>req.user.role==='admin'||s.ownerId===req.user.id)});
+ res.json({ok:true,summary,settlements:db.settlements.filter(s=>req.user.role==='admin'||(req.user.role==='merchant'&&s.ownerId===req.user.storeId)||(req.user.role==='driver'&&s.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
 router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled)}));
