@@ -162,7 +162,7 @@ router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  write(db);res.json({ok:true,settings:db.settings});
 });
 router.get('/stores',requireAuth,allow('admin','merchant'),(req,res)=>{
- const db=read();let stores=db.stores;if(req.user.role==='merchant')stores=stores.filter(s=>s.id===req.user.storeId);res.json({ok:true,stores});
+ const db=read();let stores=db.stores;if(req.user.role==='merchant')stores=stores.filter(s=>s.id===req.user.storeId).map(publicStore);res.json({ok:true,stores});
 });
 router.patch('/stores/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read(),s=storeFor(db,req.params.id);if(!s)return res.status(404).json({ok:false,message:'المتجر غير موجود'});
