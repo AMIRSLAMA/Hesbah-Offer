@@ -108,8 +108,6 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
 }
 data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
 
-data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
-
 @Composable
 fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
     var stores by remember{mutableStateOf(emptyList<JSONObject>())}
@@ -259,7 +257,7 @@ fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
                     }
                 }
             }
-            Button(onClick={checkout},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")}
+            Button(onClick={checkout()},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")}
         }
     }
 }
