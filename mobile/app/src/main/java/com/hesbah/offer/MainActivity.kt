@@ -108,29 +108,160 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
 }
 data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
 
-@Composable fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
- var stores by remember{mutableStateOf(emptyList<JSONObject>())};var products by remember{mutableStateOf(emptyList<JSONObject>())};var orders by remember{mutableStateOf(emptyList<JSONObject>())};var showOrders by remember{mutableStateOf(false)};var selectedStore by remember{mutableStateOf<JSONObject?>(null)};var cart by remember{mutableStateOf(emptyList<CartLine>())};var address by remember{mutableStateOf("")};var paymentMethods by remember{mutableStateOf(emptyList<JSONObject>())};var payment by remember{mutableStateOf("")};var coupon by remember{mutableStateOf("")};var message by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
- LaunchedEffect(Unit){try{val j=api.call("/api/marketplace");val a=j.getJSONArray("stores");stores=(0 until a.length()).map{a.getJSONObject(it)};val pm=api.call("/api/payment-methods").getJSONArray("paymentMethods");paymentMethods=(0 until pm.length()).map{pm.getJSONObject(it)};if(paymentMethods.isNotEmpty())payment=paymentMethods[0].getString("id")}catch(e:Exception){message=e.message?:"خطأ"}}
- fun add(p:JSONObject,storeId:String){if(cart.isNotEmpty()&&cart[0].storeId!=storeId){message="السلة لا تجمع منتجات من متجرين";return};val id=p.getString("id");val old=cart.find{it.productId==id};cart=if(old==null)cart+CartLine(id,p.getString("name"),p.getDouble("price"),1,storeId) else cart.map{if(it.productId==id)it.copy(qty=it.qty+1)else it}}
- fun checkout(){scope.launch{try{if(cart.isEmpty())throw Exception("السلة فارغة");if(address.isBlank())throw Exception("اكتب عنوان التوصيل");val items=org.json.JSONArray();cart.forEach{items.put(JSONObject().put("productId",it.productId).put("qty",it.qty))};val body=JSONObject().put("storeId",cart[0].storeId).put("items",items).put("address",address).put("paymentMethod",payment).put("coupon",coupon);val j=api.call("/api/orders","POST",body.toString());message="تم إنشاء الطلب #"+j.getJSONObject("order").getString("number");cart=emptyList()}catch(e:Exception){message=e.message?:"تعذر إنشاء الطلب"}}}
- Column(Modifier.fillMaxSize().padding(16.dp)){
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("أهلاً undefined",style=MaterialTheme.typography.titleLarge);TextButton(onClick=onLogout){Text("خروج")}}
-  if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.primary)
-  if(showOrders){
-   Text("طلباتي",style=MaterialTheme.typography.headlineSmall);TextButton(onClick={showOrders=false}){Text("العودة للمتاجر")};LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(orders){o->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(12.dp)){Text("طلب #"+o.getString("number"));Text("الحالة: "+o.getString("status"));Text("الإجمالي: "+o.getDouble("total")+" ج.م");Text(o.optString("address"));if(o.getString("status")=="out_for_delivery"||o.getString("status")=="picked_up"){Button(onClick={scope.launch{try{val t=api.call("/api/orders/"+o.getString("id")+"/tracking").getJSONObject("tracking");message="المندوب: "+t.optJSONObject("driver")?.optString("name","-")+"\nالموقع: "+t.optJSONObject("driver")?.optDouble("lat",0.0)+", "+t.optJSONObject("driver")?.optDouble("lng",0.0)}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("📍 تحديث موقع المندوب")}}}}}}}
-  }else if(selectedStore==null){
-   Text("المتاجر والعروض",style=MaterialTheme.typography.headlineSmall)
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){items(stores){st->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(16.dp)){Text(st.getString("name"),style=MaterialTheme.typography.titleLarge);Text(st.optString("category"));Text("⭐ "+st.optDouble("rating",0.0)+" • توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م");Button(onClick={scope.launch{try{val j=api.call("/api/stores/"+st.getString("id"));selectedStore=st;val a=j.getJSONArray("products");products=(0 until a.length()).map{a.getJSONObject(it)}}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("فتح المتجر")}}}}}
-  }else{
-   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(selectedStore!!.getString("name"),style=MaterialTheme.typography.headlineSmall);TextButton(onClick={selectedStore=null}){Text("← المتاجر")}}
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp),modifier=Modifier.weight(1f)){items(products.filter{it.optBoolean("available",false)&&it.optInt("stock",-1)!=0}){p->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(12.dp)){Text(p.getString("name"));Text(p.optString("description"));Text(p.getDouble("price").toString()+" ج.م");Button(onClick={add(p,selectedStore!!.getString("id"))}){Text("أضف للسلة")}}}}}
-   Text("السلة: "+cart.sumOf{it.qty}+" قطعة — "+cart.sumOf{it.price*it.qty}+" ج.م",style=MaterialTheme.typography.titleMedium)
-   OutlinedTextField(address,{address=it},label={Text("عنوان التوصيل")},modifier=Modifier.fillMaxWidth())
-   OutlinedTextField(coupon,{coupon=it},label={Text("كود الخصم")},modifier=Modifier.fillMaxWidth())
-   if(paymentMethods.isNotEmpty()){Text("طريقة الدفع");paymentMethods.forEach{pm->Row{RadioButton(selected=payment==pm.getString("id"),onClick={payment=pm.getString("id")});Text(pm.getString("name"))}}}
-   Button(onClick={::checkout},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")};Spacer(Modifier.height(8.dp))
-  }
- }
+data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
+
+@Composable
+fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
+    var stores by remember{mutableStateOf(emptyList<JSONObject>())}
+    var products by remember{mutableStateOf(emptyList<JSONObject>())}
+    var orders by remember{mutableStateOf(emptyList<JSONObject>())}
+    var selectedStore by remember{mutableStateOf<JSONObject?>(null)}
+    var cart by remember{mutableStateOf(emptyList<CartLine>())}
+    var address by remember{mutableStateOf("")}
+    var coupon by remember{mutableStateOf("")}
+    var paymentMethods by remember{mutableStateOf(emptyList<JSONObject>())}
+    var payment by remember{mutableStateOf("")}
+    var message by remember{mutableStateOf("")}
+    var showOrders by remember{mutableStateOf(false)}
+    val scope=rememberCoroutineScope()
+
+    fun loadOrders(){
+        scope.launch{
+            try{
+                val j=api.call("/api/orders")
+                val a=j.getJSONArray("orders")
+                orders=(0 until a.length()).map{a.getJSONObject(it)}
+            }catch(e:Exception){message=e.message?:"تعذر تحميل الطلبات"}
+        }
+    }
+    LaunchedEffect(Unit){
+        try{
+            val j=api.call("/api/marketplace")
+            val a=j.getJSONArray("stores")
+            stores=(0 until a.length()).map{a.getJSONObject(it)}
+            val pm=api.call("/api/payment-methods").getJSONArray("paymentMethods")
+            paymentMethods=(0 until pm.length()).map{pm.getJSONObject(it)}
+            if(paymentMethods.isNotEmpty()) payment=paymentMethods[0].getString("id")
+            loadOrders()
+        }catch(e:Exception){message=e.message?:"تعذر تحميل البيانات"}
+    }
+    fun addProduct(p:JSONObject,storeId:String){
+        if(cart.isNotEmpty() && cart[0].storeId!=storeId){message="السلة لا تجمع منتجات من متجرين";return}
+        val id=p.getString("id")
+        val old=cart.find{it.productId==id}
+        cart=if(old==null) cart+CartLine(id,p.getString("name"),p.getDouble("price"),1,storeId)
+             else cart.map{if(it.productId==id)it.copy(qty=it.qty+1)else it}
+    }
+    fun checkout(){
+        scope.launch{
+            try{
+                if(cart.isEmpty())throw Exception("السلة فارغة")
+                if(address.isBlank())throw Exception("اكتب عنوان التوصيل")
+                val items=org.json.JSONArray()
+                cart.forEach{items.put(JSONObject().put("productId",it.productId).put("qty",it.qty))}
+                val body=JSONObject().put("storeId",cart[0].storeId).put("items",items).put("address",address).put("paymentMethod",payment).put("coupon",coupon)
+                val j=api.call("/api/orders","POST",body.toString())
+                message="تم إنشاء الطلب #"+j.getJSONObject("order").getString("number")
+                cart=emptyList()
+                loadOrders()
+            }catch(e:Exception){message=e.message?:"تعذر إنشاء الطلب"}
+        }
+    }
+    Column(Modifier.fillMaxSize().padding(16.dp)){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+            Text("أهلاً "+s.name,style=MaterialTheme.typography.titleLarge)
+            Row{
+                TextButton(onClick={loadOrders();showOrders=true}){Text("طلباتي")}
+                TextButton(onClick=onLogout){Text("خروج")}
+            }
+        }
+        if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.primary)
+        if(showOrders){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                Text("طلباتي",style=MaterialTheme.typography.headlineSmall)
+                TextButton(onClick={showOrders=false}){Text("المتاجر")}
+            }
+            LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+                items(orders){o->
+                    Card(Modifier.fillMaxWidth()){
+                        Column(Modifier.padding(12.dp)){
+                            Text("طلب #"+o.getString("number"))
+                            Text("الحالة: "+o.getString("status"))
+                            Text("الإجمالي: "+o.getDouble("total")+" ج.م")
+                            Text(o.optString("address"))
+                            if(o.getString("status")=="picked_up" || o.getString("status")=="out_for_delivery"){
+                                Button(onClick={
+                                    scope.launch{
+                                        try{
+                                            val t=api.call("/api/orders/"+o.getString("id")+"/tracking").getJSONObject("tracking")
+                                            val d=t.optJSONObject("driver")
+                                            message="المندوب: "+(d?.optString("name")?:"-")+" | الموقع: "+(d?.optDouble("lat",0.0))+ ", "+(d?.optDouble("lng",0.0))
+                                        }catch(e:Exception){message=e.message?:"تعذر تحديث الموقع"}
+                                    }
+                                }){Text("📍 تحديث موقع المندوب")}
+                            }
+                        }
+                    }
+                }
+            }
+        }else if(selectedStore==null){
+            Text("المتاجر والعروض",style=MaterialTheme.typography.headlineSmall)
+            LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){
+                items(stores){st->
+                    Card(Modifier.fillMaxWidth()){
+                        Column(Modifier.padding(16.dp)){
+                            Text(st.getString("name"),style=MaterialTheme.typography.titleLarge)
+                            Text(st.optString("category"))
+                            Text("⭐ "+st.optDouble("rating",0.0)+" • توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م")
+                            Button(onClick={
+                                scope.launch{
+                                    try{
+                                        val j=api.call("/api/stores/"+st.getString("id"))
+                                        selectedStore=st
+                                        val a=j.getJSONArray("products")
+                                        products=(0 until a.length()).map{a.getJSONObject(it)}
+                                    }catch(e:Exception){message=e.message?:"تعذر فتح المتجر"}
+                                }
+                            }){Text("فتح المتجر")}
+                        }
+                    }
+                }
+            }
+        }else{
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+                Text(selectedStore!!.getString("name"),style=MaterialTheme.typography.headlineSmall)
+                TextButton(onClick={selectedStore=null}){Text("← المتاجر")}
+            }
+            LazyColumn(
+                verticalArrangement=Arrangement.spacedBy(8.dp),
+                modifier=Modifier.weight(1f)
+            ){
+                items(products.filter{it.optBoolean("available",false) && it.optInt("stock",-1)!=0}){p->
+                    Card(Modifier.fillMaxWidth()){
+                        Column(Modifier.padding(12.dp)){
+                            Text(p.getString("name"))
+                            Text(p.optString("description"))
+                            Text(p.getDouble("price").toString()+" ج.م")
+                            Button(onClick={addProduct(p,selectedStore!!.getString("id"))}){Text("أضف للسلة")}
+                        }
+                    }
+                }
+            }
+            Text("السلة: "+cart.sumOf{it.qty}+" قطعة — "+cart.sumOf{it.price*it.qty}+" ج.م",style=MaterialTheme.typography.titleMedium)
+            OutlinedTextField(address,{address=it},label={Text("عنوان التوصيل")},modifier=Modifier.fillMaxWidth())
+            OutlinedTextField(coupon,{coupon=it},label={Text("كود الخصم")},modifier=Modifier.fillMaxWidth())
+            if(paymentMethods.isNotEmpty()){
+                Text("طريقة الدفع")
+                paymentMethods.forEach{pm->
+                    Row{
+                        RadioButton(selected=payment==pm.getString("id"),onClick={payment=pm.getString("id")})
+                        Text(pm.getString("name"))
+                    }
+                }
+            }
+            Button(onClick={checkout},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")}
+        }
+    }
 }
 @Composable fun DriverHome(api:Api,s:Session,onLogout:()->Unit){
  var orders by remember{mutableStateOf(emptyList<JSONObject>())};var status by remember{mutableStateOf("offline")};var message by remember{mutableStateOf("")};var gps by remember{mutableStateOf("GPS متوقف")};val scope=rememberCoroutineScope();val activity=LocalContext.current as Activity
