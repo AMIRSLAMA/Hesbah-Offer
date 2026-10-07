@@ -84,7 +84,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
   write(db);res.status(201).json({ok:true,order:o});
  }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إنشاء الطلب'});}
 });
-router.patch('/orders/:id/status',requireAuth,(req,res)=>{
+router.patch('/orders/:id/status',requireAuth,allow('admin','merchant','driver','customer'),(req,res)=>{
  const db=read(),o=db.orders.find(x=>x.id===req.params.id),next=String(req.body.status||'');
  if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});
  if(req.user.role==='merchant'&&o.storeId!==req.user.storeId)return res.status(403).json({ok:false,message:'غير مصرح'});
