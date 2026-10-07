@@ -17,7 +17,7 @@ function roleAr(role){return ({admin:'مدير النظام',merchant:'التا�
 function pageRole(){const p=location.pathname;return p.endsWith('/driver.html')?'driver':p.endsWith('/merchant.html')?'merchant':p.endsWith('/admin.html')?'admin':'';}
 function ensurePageRole(role){const expected=pageRole();if(!expected||expected===role)return true;const box=document.querySelector('#orders');if(box)box.innerHTML='<div class="card driver-access"><h2>⚠️ الحساب غير مخصص لهذه الصفحة</h2><p>هذه صفحة <b>'+roleAr(expected)+'</b>، لكن الحساب الحالي هو <b>'+roleAr(role)+'</b>.</p><button class="btn" onclick="logout()">خروج وتسجيل الدخول بالحساب الصحيح</button></div>';stopDriverGPS();return false;}
 async function apiP(url,opt={}){if(!token())return location.href='/';opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token(),'Content-Type':'application/json'};const r=await fetch('/api'+url,opt);const j=await r.json();if(r.status===401){localStorage.clear();location.href='/'}if(!r.ok)throw new Error(j.message||'خطأ');return j}
-function logout(){localStorage.clear();location.href='/'}
+function logout(){localStorage.removeItem('hesbahToken');localStorage.removeItem('hesbahUser');localStorage.removeItem('hesbahDriverAvailable');location.href='/driver.html'}
 function fmt(n){return Number(n||0).toFixed(0)+' ج.م'}
 let activeView='orders';
 let ordersLoadSeq=0;
