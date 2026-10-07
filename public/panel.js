@@ -23,7 +23,7 @@ const orderStages=[
 ];
 function stageBar(status){
  const current=orderStages.findIndex(x=>x[0]===status);
- return '<div class="order-stages">'+orderStages.map((x,i)=>'<span class="'+(i<current?'done ':i===current?'current ':'')+'">'+x[1]+'</span>').join('')+'</div>';
+ return '<div class="order-stages">'+orderStages.map((x,i)=>'<span class="'+(i<current?'done ':i===current?'current ':'')+'">'+x[1]+'</span>').join('')+'</div>'+(current>=0?'<div class="order-current">📌 <span>الحالة الحالية:</span> <strong>'+orderStages[current][1]+'</strong></div>':'');
 }
 function nextAction(role,status){
  if(role==='merchant')return ({pending:['accepted','قبول الطلب'],accepted:['preparing','بدء التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[status]||null);
