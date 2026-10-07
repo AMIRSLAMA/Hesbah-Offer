@@ -8,7 +8,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
@@ -77,7 +76,7 @@ class Api(private val context:Context){
  Button(enabled=!busy,onClick={scope.launch{try{busy=true;message="جاري رفع المستندات...";if(name.isBlank()||phone.isBlank()||nationalId.isBlank()||address.isBlank()||vehicleType.isBlank()||brand.isBlank()||model.isBlank()||plate.isBlank()||!consent||files.size<5)throw Exception("أكمل البيانات وصوّر كل المستندات المطلوبة");val fields=mapOf("name" to name,"phone" to phone,"nationalId" to nationalId,"address" to address,"vehicleType" to vehicleType,"vehicleBrand" to brand,"vehicleModel" to model,"vehiclePlate" to plate,"consent" to "yes");val j=api.driverApplication(fields,files);message="تم إرسال الطلب ✓\\nرقم الطلب: "+j.optString("applicationId");}catch(e:Exception){message=e.message?:"تعذر الإرسال"}finally{busy=false}}},modifier=Modifier.fillMaxWidth()){Text(if(busy)"جاري الإرسال..." else "إرسال طلب التسجيل")}}
 }
 private lateinit var pendingUri:Uri
-\nclass MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
+class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
 @Composable fun HesbahApp(api:Api){
  var session by remember{mutableStateOf(api.session())}
  if(session==null) Login(api){session=api.session()} else if(session!!.role=="driver") DriverHome(api,session!!){api.clear();session=null} else CustomerHome(api,session!!){api.clear();session=null}
