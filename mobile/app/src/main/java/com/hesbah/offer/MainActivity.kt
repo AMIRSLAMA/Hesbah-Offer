@@ -261,18 +261,104 @@ fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
         }
     }
 }
-@Composable fun DriverHome(api:Api,s:Session,onLogout:()->Unit){
- var orders by remember{mutableStateOf(emptyList<JSONObject>())};var status by remember{mutableStateOf("offline")};var message by remember{mutableStateOf("")};var gps by remember{mutableStateOf("GPS متوقف")};val scope=rememberCoroutineScope();val activity=LocalContext.current as Activity
- fun load(){scope.launch{try{val j=api.call("/api/orders");val a=j.getJSONArray("orders");orders=(0 until a.length()).map{a.getJSONObject(it)};message=""}catch(e:Exception){message=e.message?:"خطأ"}}}
- LaunchedEffect(Unit){load()}
- fun startGps(){
-  if(android.os.Build.VERSION.SDK_INT>=33 && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),78)}
-  if(activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){activity.requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),77);return}
-  if(android.os.Build.VERSION.SDK_INT>=26)activity.startForegroundService(android.content.Intent(activity,DriverLocationService::class.java)) else activity.startService(android.content.Intent(activity,DriverLocationService::class.java))
- }
- fun stopGps(){activity.stopService(android.content.Intent(activity,DriverLocationService::class.java))}
- Column(Modifier.fillMaxSize().padding(16.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("المندوب: ${s.name}");TextButton(onClick=onLogout){Text("خروج")}}
- Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){Button(onClick={scope.launch{try{api.call("/api/drivers/me","PATCH",JSONObject().put("status","available").toString());status="available";startGps()}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("متاح وابدأ GPS")};Button(onClick={scope.launch{try{api.call("/api/drivers/me","PATCH",JSONObject().put("status","offline").toString());status="offline";stopGps()}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("غير متاح")}}
- Text("الحالة: $status");Text(if(status=="available")"GPS يعمل في الخلفية حتى لو أغلقت الشاشة":"GPS متوقف");if(message.isNotBlank())Text(message)
- LazyColumn{items(orders){o->Card(Modifier.fillMaxWidth().padding(vertical=5.dp)){Column(Modifier.padding(12.dp)){Text("طلب #"+o.getString("number"));Text("الحالة: "+o.getString("status"));Text(o.optString("address"));if(o.getString("status")=="driver_assigned"){Button(onClick={scope.launch{try{api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","picked_up").toString());load()}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("تم الاستلام وابدأ التتبع")}};if(o.getString("status")=="picked_up"){Button(onClick={scope.launch{try{api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","out_for_delivery").toString());load()}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("في الطريق")}};if(o.getString("status")=="out_for_delivery"){Button(onClick={scope.launch{try{api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","delivered").toString());load()}catch(e:Exception){message=e.message?:"خطأ"}}}){Text("تم التسليم")}}}}}}
- }
+@Composable
+fun DriverHome(api:Api,s:Session,onLogout:()->Unit){
+    var orders by remember{mutableStateOf(emptyList<JSONObject>())}
+    var status by remember{mutableStateOf("offline")}
+    var message by remember{mutableStateOf("")}
+    val scope=rememberCoroutineScope()
+    val activity=LocalContext.current as Activity
+
+    fun load(){
+        scope.launch{
+            try{
+                val j=api.call("/api/orders")
+                val a=j.getJSONArray("orders")
+                orders=(0 until a.length()).map{a.getJSONObject(it)}
+            }catch(e:Exception){message=e.message?:"تعذر تحميل الطلبات"}
+        }
+    }
+    fun startGps(){
+        if(android.os.Build.VERSION.SDK_INT>=33 && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){
+            activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),78)
+        }
+        if(activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED &&
+           activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+            activity.requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),77)
+            return
+        }
+        val intent=android.content.Intent(activity,DriverLocationService::class.java)
+        if(android.os.Build.VERSION.SDK_INT>=26) activity.startForegroundService(intent) else activity.startService(intent)
+    }
+    fun stopGps(){activity.stopService(android.content.Intent(activity,DriverLocationService::class.java))}
+    LaunchedEffect(Unit){load()}
+
+    Column(Modifier.fillMaxSize().padding(16.dp)){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+            Text("المندوب: "+s.name,style=MaterialTheme.typography.titleLarge)
+            TextButton(onClick={stopGps();onLogout()}){Text("خروج")}
+        }
+        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            Button(onClick={
+                scope.launch{
+                    try{
+                        api.call("/api/drivers/me","PATCH",JSONObject().put("status","available").toString())
+                        status="available"
+                        startGps()
+                        load()
+                    }catch(e:Exception){message=e.message?:"خطأ"}
+                }
+            }){Text("متاح وابدأ GPS")}
+            Button(onClick={
+                scope.launch{
+                    try{
+                        api.call("/api/drivers/me","PATCH",JSONObject().put("status","offline").toString())
+                        status="offline"
+                        stopGps()
+                    }catch(e:Exception){message=e.message?:"خطأ"}
+                }
+            }){Text("غير متاح")}
+        }
+        Text("الحالة: "+status)
+        Text(if(status=="available")"GPS يعمل في الخلفية أثناء التوصيل" else "GPS متوقف")
+        if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.error)
+        LazyColumn{
+            items(orders){o->
+                Card(Modifier.fillMaxWidth().padding(vertical=5.dp)){
+                    Column(Modifier.padding(12.dp)){
+                        Text("طلب #"+o.getString("number"))
+                        Text("الحالة: "+o.getString("status"))
+                        Text(o.optString("address"))
+                        when(o.getString("status")){
+                            "driver_assigned" -> Button(onClick={
+                                scope.launch{
+                                    try{
+                                        api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","picked_up").toString())
+                                        load()
+                                    }catch(e:Exception){message=e.message?:"خطأ"}
+                                }
+                            }){Text("تم الاستلام وابدأ التتبع")}
+                            "picked_up" -> Button(onClick={
+                                scope.launch{
+                                    try{
+                                        api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","out_for_delivery").toString())
+                                        load()
+                                    }catch(e:Exception){message=e.message?:"خطأ"}
+                                }
+                            }){Text("في الطريق")}
+                            "out_for_delivery" -> Button(onClick={
+                                scope.launch{
+                                    try{
+                                        api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status","delivered").toString())
+                                        load()
+                                    }catch(e:Exception){message=e.message?:"خطأ"}
+                                }
+                            }){Text("تم التسليم")}
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
