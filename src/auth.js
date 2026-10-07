@@ -1,0 +1,6 @@
+const express=require('express');const jwt=require('jsonwebtoken');const bcrypt=require('bcryptjs');const {read}=require('./store');
+const router=express.Router();const secret=()=>process.env.JWT_SECRET||'hesbah-offer-change-me';
+router.post('/login',(req,res)=>{const {username,password}=req.body||{};const db=read();const u=db.users.find(x=>x.username===username);if(!u||!bcrypt.compareSync(password||'',u.password))return res.status(401).json({ok:false,message:'بيانات الدخول غير صحيحة'});const token=jwt.sign({id:u.id,role:u.role,storeId:u.storeId,driverId:u.driverId},secret(),{expiresIn:'7d'});res.json({ok:true,token,user:{id:u.id,name:u.name,phone:u.phone,role:u.role,storeId:u.storeId,driverId:u.driverId}})});
+function requireAuth(req,res,next){try{const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))throw 0;req.user=jwt.verify(h.slice(7),secret());next()}catch(e){res.status(401).json({ok:false,message:'انتهت الجلسة أو التوكن غير صالح'})}}
+function allow(...roles){return (req,res,next)=>roles.includes(req.user.role)?next():res.status(403).json({ok:false,message:'غير مصرح'});}
+module.exports=router;module.exports.requireAuth=requireAuth;module.exports.allow=allow;
