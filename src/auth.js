@@ -10,6 +10,7 @@ router.post('/register',(req,res)=>{
 router.post('/login',(req,res)=>{
  const {username,password}=req.body||{},db=read(),u=db.users.find(x=>x.username.toLowerCase()===String(username||'').toLowerCase());
  if(!u||!bcrypt.compareSync(String(password||''),u.password))return res.status(401).json({ok:false,message:'بيانات الدخول غير صحيحة'});
+ const ip=req.ip||'';u.lastLoginAt=new Date().toISOString();u.lastLoginIp=ip;u.loginHistory=Array.isArray(u.loginHistory)?u.loginHistory:[];u.loginHistory.push({at:u.lastLoginAt,ip,userAgent:req.get('user-agent')||''});if(u.loginHistory.length>20)u.loginHistory=u.loginHistory.slice(-20);write(db);
  const token=jwt.sign({id:u.id,role:u.role,storeId:u.storeId,driverId:u.driverId},secret(),{expiresIn:'7d'});
  res.json({ok:true,token,user:safeUser(u)});
 });
