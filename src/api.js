@@ -133,14 +133,14 @@ router.post('/orders/:id/assign-driver',requireAuth,allow('admin','merchant'),(r
  const db=read(),o=db.orders.find(x=>x.id===req.params.id),d=driverFor(db,req.body.driverId);
  if(!o||!d)return res.status(404).json({ok:false,message:'الطلب أو المندوب غير موجود'});
  if(req.user.role==='merchant'&&o.storeId!==req.user.storeId)return res.status(403).json({ok:false,message:'غير مصرح'});
- if(d.status==='busy')return res.status(409).json({ok:false,message:'المندوب مشغول حالياً'});
+ if(o.status!=='ready_for_pickup')return res.status(409).json({ok:false,message:'الطلب يجب أن يكون جاهزاً للاستلام أولاً'});if(d.status!=='available')return res.status(409).json({ok:false,message:'المندوب غير متاح حالياً'});
  if(o.driverId&&o.driverId!==d.id){const old=driverFor(db,o.driverId);if(old)old.status='available';}
  o.driverId=d.id;o.status='driver_assigned';o.updatedAt=now();o.timeline.push({status:o.status,at:o.updatedAt,by:req.user.id});
  d.status='busy';notify(db,d.userId,'مهمة توصيل جديدة','تم إسناد الطلب '+o.number+' إليك');notify(db,o.customerId,'تم تعيين المندوب','جارٍ تجهيز التوصيل');
  write(db);res.json({ok:true,order:visibleOrderData(req,o),driver:d});
 });
 router.get('/drivers',requireAuth,allow('admin','merchant'),(req,res)=>{
- const db=read();res.json({ok:true,drivers:db.drivers.map(d=>({...d,user:undefined}))});
+ const db=read();const drivers=req.user.role==='admin'?db.drivers.map(d=>({...d,user:undefined})):db.drivers.map(d=>({id:d.id,name:d.name,phone:d.phone,status:d.status,rating:d.rating,lat:d.lat??null,lng:d.lng??null,updatedAt:d.updatedAt||null,deliveries:d.deliveries||0}));res.json({ok:true,drivers});
 });
 
 router.get('/orders/:id/tracking',requireAuth,(req,res)=>{const db=read(),o=db.orders.find(x=>x.id===req.params.id);if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});if(!visibleOrder(req,o))return res.status(403).json({ok:false,message:'غير مصرح'});const d=o.driverId?driverFor(db,o.driverId):null;res.json({ok:true,tracking:{active:['picked_up','out_for_delivery'].includes(o.status),status:o.status,customerLocation:{lat:o.lat??null,lng:o.lng??null,address:o.address||''},driver:d?{id:d.id,name:d.name,lat:d.lat??null,lng:d.lng??null,updatedAt:d.updatedAt||null}:null}});});
@@ -192,7 +192,7 @@ router.get('/stores',requireAuth,allow('admin','merchant'),(req,res)=>{
 router.patch('/stores/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read(),s=storeFor(db,req.params.id);if(!s)return res.status(404).json({ok:false,message:'المتجر غير موجود'});
  if(req.user.role==='merchant'&&s.id!==req.user.storeId)return res.status(403).json({ok:false});
- for(const k of ['name','category','description','deliveryFee','commission','lat','lng','isOpen'])if(req.body[k]!==undefined)s[k]=req.body[k];
+ for(const k of ['name','category','description','deliveryFee','lat','lng','isOpen'])if(req.body[k]!==undefined)s[k]=req.body[k];if(req.user.role==='admin'&&req.body.commission!==undefined)s.commission=Math.max(0,Number(req.body.commission));
  s.updatedAt=now();write(db);res.json({ok:true,store:s});
 });
 router.post('/stores',requireAuth,allow('admin'),(req,res)=>{
