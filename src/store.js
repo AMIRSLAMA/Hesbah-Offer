@@ -1,10 +1,10 @@
 const fs=require('fs');const path=require('path');const bcrypt=require('bcryptjs');
 const dir=path.join(__dirname,'..','data');const file=path.join(dir,'db.json');
-function seed(){return {settings:{platformName:'Hesbah Offer',defaultCommission:10,deliveryBase:25,currency:'EGP',version:'1.0.0',paymentMethods:[{id:'cash',name:'الدفع عند الاستلام',enabled:true},{id:'card',name:'بطاقة بنكية',enabled:false},{id:'wallet',name:'محفظة إلكترونية',enabled:false}]},
+function seed(){return {settings:{platformName:'Hesbah Offer',defaultCommission:10,deliveryBase:25,currency:'EGP',version:'1.0.0',paymentMethods:[{id:'cash',name:'الدفع عند الاستلام',enabled:true,instructions:'الدفع نقدًا عند استلام الطلب'},{id:'card',name:'بطاقة بنكية',enabled:false,instructions:'الدفع بالبطاقة عند إتمام الطلب'},{id:'wallet',name:'محفظة إلكترونية',enabled:false,instructions:'سيظهر رقم المحفظة هنا عند تفعيلها'}]},
 users:[
-{id:'u_admin',name:'Hesbah Admin',phone:'01000000000',username:'admin',password:bcrypt.hashSync('123456',10),role:'admin'},
-{id:'u_merchant',name:'Demo Store',phone:'01111111111',username:'merchant',password:bcrypt.hashSync('123456',10),role:'merchant',storeId:'s_demo'},
-{id:'u_driver',name:'Ahmed Driver',phone:'01222222222',username:'driver',password:bcrypt.hashSync('123456',10),role:'driver',driverId:'d_demo'}
+{id:'u_admin',name:'Hesbah Admin',phone:'01000000000',email:'admin@hesbahoffer.com',username:'admin',password:bcrypt.hashSync('123456',10),role:'admin'},
+{id:'u_merchant',name:'Demo Store',phone:'01111111111',email:'merchant@hesbahoffer.com',username:'merchant',password:bcrypt.hashSync('123456',10),role:'merchant',storeId:'s_demo'},
+{id:'u_driver',name:'Ahmed Driver',phone:'01222222222',email:'driver@hesbahoffer.com',username:'driver',password:bcrypt.hashSync('123456',10),role:'driver',driverId:'d_demo'}
 ],
 stores:[{id:'s_demo',name:'Hesbah Market',category:'بقالة',description:'متجر تجريبي جاهز للطلبات',rating:4.8,commission:10,deliveryFee:25,isOpen:true,lat:30.0444,lng:31.2357,ownerUserId:'u_merchant'}],
 products:[
