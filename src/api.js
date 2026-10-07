@@ -3,11 +3,14 @@ const {v4:uuid}=require('uuid');
 const fs=require('fs');
 const path=require('path');
 const multer=require('multer');
+const bcrypt=require('bcryptjs');
 const {read,write}=require('./store');
 const {requireAuth,allow}=require('./auth');
 const router=express.Router();
 const privateDocsDir=path.join(__dirname,'..','data','private','driver-docs');
 fs.mkdirSync(privateDocsDir,{recursive:true});
+const profileDir=path.join(__dirname,'..','data','private','customer-profiles');fs.mkdirSync(profileDir,{recursive:true});
+const profileUpload=multer({storage:multer.diskStorage({destination:(_,__,cb)=>cb(null,profileDir),filename:(_,file,cb)=>cb(null,Date.now()+'-'+uuid()+path.extname(file.originalname).toLowerCase())}),limits:{fileSize:3*1024*1024},fileFilter:(_,file,cb)=>/^image\/(jpeg|png|webp)$/.test(file.mimetype)?cb(null,true):cb(new Error('الصورة يجب أن تكون JPG أو PNG أو WEBP'))});
 const upload=multer({
  storage:multer.diskStorage({
   destination:(_,__,cb)=>cb(null,privateDocsDir),
@@ -45,6 +48,10 @@ function visibleOrder(req,o){
  if(req.user.role==='driver')return o.driverId===req.user.driverId;
  return false;
 }
+router.get('/profile',requireAuth,allow('customer'),(req,res)=>{const db=read(),u=user(db,req.user.id);if(!u)return res.status(404).json({ok:false,message:'العميل غير موجود'});res.json({ok:true,profile:{id:u.id,name:u.name,phone:u.phone||'',email:u.email||'',username:u.username,address:u.address||'',lat:u.lat??null,lng:u.lng??null,whatsapp:u.social?.whatsapp||'',facebook:u.social?.facebook||'',instagram:u.social?.instagram||'',photo:u.photo||'',deleteRequestedAt:u.deleteRequestedAt||null}});});
+router.patch('/profile',requireAuth,allow('customer'),(req,res)=>{const db=read(),u=user(db,req.user.id);if(!u)return res.status(404).json({ok:false,message:'العميل غير موجود'});for(const k of ['name','phone','address'])if(req.body[k]!==undefined)u[k]=String(req.body[k]||'').trim();if(req.body.lat!==undefined)u.lat=Number.isFinite(Number(req.body.lat))?Number(req.body.lat):null;if(req.body.lng!==undefined)u.lng=Number.isFinite(Number(req.body.lng))?Number(req.body.lng):null;u.social=u.social||{};for(const k of ['whatsapp','facebook','instagram'])if(req.body[k]!==undefined){const v=String(req.body[k]||'').trim();if(v&&!/^https?:\/\//i.test(v))return res.status(400).json({ok:false,message:'روابط التواصل يجب أن تبدأ بـ http أو https'});u.social[k]=v;}write(db);res.json({ok:true,message:'تم حفظ الملف الشخصي'});});
+router.patch('/profile/password',requireAuth,allow('customer'),(req,res)=>{const db=read(),u=user(db,req.user.id),oldPassword=String(req.body.oldPassword||''),newPassword=String(req.body.newPassword||'');if(!u||!bcrypt.compareSync(oldPassword,u.password))return res.status(400).json({ok:false,message:'كلمة المرور الحالية غير صحيحة'});if(newPassword.length<6)return res.status(400).json({ok:false,message:'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'});u.password=bcrypt.hashSync(newPassword,10);write(db);res.json({ok:true,message:'تم تغيير كلمة المرور'});});
+router.post('/profile/photo',requireAuth,allow('customer'),profileUpload.single('photo'),(req,res)=>{const db=read(),u=user(db,req.user.id);if(!u)return res.status(404).json({ok:false,message:'العميل غير موجود'});if(!req.file)return res.status(400).json({ok:false,message:'اختر صورة'});if(u.photo){const old=path.join(profileDir,path.basename(u.photo));if(fs.existsSync(old))fs.unlinkSync(old);}u.photo=req.file.filename;write(db);res.json({ok:true,photo:u.photo});});
 router.get('/marketplace',(req,res)=>{
  const db=read();const q=String(req.query.q||'').trim().toLowerCase();const cat=String(req.query.category||'').trim();
  let stores=db.stores.filter(s=>s.isOpen);
