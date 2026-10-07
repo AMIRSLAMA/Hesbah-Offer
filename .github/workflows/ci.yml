@@ -26,7 +26,12 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - run: chmod +x gradlew
+        with:
+          gradle-version: '8.9'
+      - run: gradle assembleDebug
         working-directory: mobile
-      - run: ./gradlew assembleDebug
-        working-directory: mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hesbah-offer-debug-apk
+          path: mobile/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
