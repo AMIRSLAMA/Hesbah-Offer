@@ -25,48 +25,11 @@ async function savePaymentSettings(){try{const d=await apiP('/settings');const m
 async function loadDeleteRequests(){activeView='deleteRequests';try{const d=await apiP('/customer-delete-requests');document.querySelector('#orders').innerHTML=d.requests.length?d.requests.map(x=>'<div class="card"><h3>'+x.name+'</h3><p>📱 '+(x.phone||'-')+' · ✉️ '+(x.email||'-')+'</p><p>طلب الحذف: '+x.requestedAt+'</p><p class="muted">'+(x.note||'')+'</p><button class="btn" onclick="reviewDelete(\''+x.id+'\',\'approve\')">موافقة وحذف</button> <button class="btn" onclick="reviewDelete(\''+x.id+'\',\'reject\')">رفض الطلب</button></div>').join(''):'<div class="card">لا توجد طلبات حذف.</div>'}catch(e){alert(e.message)}}
 async function reviewDelete(id,action){try{await apiP('/customer-delete-requests/'+id,{method:'PATCH',body:JSON.stringify({action})});loadDeleteRequests()}catch(e){alert(e.message)}}
 function statusAr(s){return ({pending:'تم استلام الطلب',accepted:'تم قبول الطلب',preparing:'جاري التجهيز',ready_for_pickup:'جاهز للاستلام',driver_assigned:'تم تعيين المندوب',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',delivered:'تم التسليم',cancelled:'ملغي'})[s]||s}
-const orderStages=[
- ['pending','تم الاستلام'],
- ['accepted','تم قبول الطلب'],
- ['preparing','جاري التجهيز'],
- ['ready_for_pickup','جاهز للاستلام'],
- ['driver_assigned','تم تعيين المندوب'],
- ['picked_up','استلم المندوب الطلب'],
- ['out_for_delivery','في الطريق'],
- ['delivered','تم التسليم']
-];
-function stageBar(status){
- const current=orderStages.findIndex(x=>x[0]===status);
- return '<div class="order-stages">'+orderStages.map((x,i)=>'<span class="'+(i<current?'done ':i===current?'current ':'')+'">'+x[1]+'</span>').join('')+'</div>'+(current>=0?'<div class="order-current">📌 <span>الحالة الحالية:</span> <strong>'+orderStages[current][1]+'</strong></div>':'');
-}
-function nextAction(role,status){
- if(role==='merchant')return ({pending:['accepted','قبول الطلب'],accepted:['preparing','بدء التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[status]||null);
- if(role==='driver')return ({driver_assigned:['picked_up','استلام الطلب'],picked_up:['out_for_delivery','بدء التوصيل'],out_for_delivery:['delivered','تأكيد التسليم']}[status]||null);
- return null;
-}
-async function trackOrder(id){
- try{
-  const d=await apiP('/orders/'+id+'/tracking'),t=d.tracking;
-  let box=document.querySelector('#tracking-'+id);
-  if(!box){box=document.createElement('div');box.id='tracking-'+id;box.className='card';box.style.marginTop='10px';document.querySelector('#orders').prepend(box)}
-  if(!t.driver||t.driver.lat==null||t.driver.lng==null){box.innerHTML='<b>📍 تتبع المندوب</b><p class="muted">المندوب لم يرسل موقعه بعد.</p>';return}
-  const lat=t.driver.lat,lng=t.driver.lng;
-  box.innerHTML='<b>📍 المندوب: '+t.driver.name+'</b><p>الحالة: '+statusAr(t.status)+' · آخر تحديث: '+(t.driver.updatedAt||'-')+'</p><iframe title="خريطة المندوب" style="width:100%;height:260px;border:0;border-radius:12px" src="https://www.openstreetmap.org/export/embed.html?bbox='+(lng-0.01)+'%2C'+(lat-0.01)+'%2C'+(lng+0.01)+'%2C'+(lat+0.01)+'&layer=mapnik&marker='+lat+'%2C'+lng+'"></iframe>';
- }catch(e){alert(e.message)}
-}
-async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;
- try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();
-  if(!role){box.innerHTML='<div class="card"><h3>⚠️ لم يتم تحديد صلاحية الحساب</h3><p class="muted">سجّل الدخول بحساب التاجر أو المندوب ثم أعد فتح الصفحة.</p></div>';return;}
- if(role==='driver'){
-  let gps=document.querySelector('#driver-gps-status');
-  if(!gps){gps=document.createElement('div');gps.id='driver-gps-status';gps.className='card';gps.style.marginBottom='12px';box.parentNode.insertBefore(gps,box);}
-  if(['driver_assigned','picked_up','out_for_delivery'].some(s=>d.orders.some(o=>o.status===s)))startDriverGPS();
- }
- box.innerHTML=d.orders.length?d.orders.map(o=>{
- const driver=role==='driver';
- const action=nextAction(role,o.status);
- return `<div class="card"><div class="row"><h3>طلب #${o.number}</h3><span class="status">${statusAr(o.status)}</span></div><p class="muted">👤 عرض حسب صلاحية: <b>${roleAr(role)}</b></p>${stageBar(o.status)}<p><b>الخطوة الحالية:</b> ${statusAr(o.status)}</p>${action?`<p class="muted">الإجراء المطلوب الآن: ${action[1]}</p>`:''}<p>الإجمالي: <b>${fmt(o.total)}</b>${role==='admin'?` · العمولة: ${fmt(o.commission)} (${o.commissionRate}%)`:''}</p><p class="muted">${o.address||'بدون عنوان'}</p><div class="row">${role==='merchant'&&o.status==='pending'?`<button class="btn" onclick="setStatus('${o.id}','accepted')">قبول الطلب</button><button class="btn" onclick="setStatus('${o.id}','cancelled')">رفض الطلب</button>`:action?`<button class="btn" onclick="setStatus('${o.id}','${action[0]}')">${action[1]}</button>`:''}${driver||o.status!=='ready_for_pickup'?'':`<button class="btn" onclick="assignDriver('${o.id}')">اختيار مندوب</button>`}${role!=='driver'&&o.driverId?`<button class="btn" onclick="trackOrder('${o.id}')">📍 متابعة المندوب</button>`:''}</div></div>`}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status))trackOrder(o.id)} }catch(e){alert(e.message)}
-}
+const orderStages={merchant:[['pending','تم الاستلام'],['accepted','تم قبول الطلب'],['preparing','جاري التجهيز'],['ready_for_pickup','جاهز للاستلام'],['driver_assigned','تم تعيين المندوب'],['picked_up','استلم المندوب الطلب'],['out_for_delivery','في الطريق'],['delivered','تم التسليم']],driver:[['driver_assigned','بانتظار الاستلام'],['picked_up','تم الاستلام'],['out_for_delivery','في الطريق'],['delivered','تم التسليم']],admin:[['pending','تم الاستلام'],['accepted','تم القبول'],['preparing','جاري التجهيز'],['ready_for_pickup','جاهز للاستلام'],['driver_assigned','تم تعيين المندوب'],['picked_up','تم الاستلام'],['out_for_delivery','في الطريق'],['delivered','تم التسليم']],customer:[['pending','تم الاستلام'],['accepted','تم القبول'],['preparing','جاري التجهيز'],['ready_for_pickup','جاهز للاستلام'],['driver_assigned','تم تعيين المندوب'],['picked_up','تم الاستلام'],['out_for_delivery','في الطريق'],['delivered','تم التسليم']]};
+function stageBar(status,role){const stages=orderStages[role]||orderStages.customer,current=stages.findIndex(x=>x[0]===status);return '<div class="order-stages">'+stages.map((x,i)=>'<span class="'+(i<current?'done ':i===current?'current ':'')+'">'+x[1]+'</span>').join('')+'</div>'+(current>=0?'<div class="order-current">📌 <span>الحالة الحالية:</span> <strong>'+stages[current][1]+'</strong></div>':'');}
+function nextAction(role,status){if(role==='merchant')return ({pending:['accepted','قبول الطلب'],accepted:['preparing','بدء التجهيز'],preparing:['ready_for_pickup','جاهز للاستلام']}[status]||null);if(role==='driver')return ({driver_assigned:['picked_up','استلام الطلب'],picked_up:['out_for_delivery','بدء التوصيل'],out_for_delivery:['delivered','تأكيد التسليم']}[status]||null);return null;}
+async function trackOrder(id){try{const d=await apiP('/orders/'+id+'/tracking'),t=d.tracking;let box=document.querySelector('#tracking-'+id);if(!box){box=document.createElement('div');box.id='tracking-'+id;box.className='card';box.style.marginTop='10px';document.querySelector('#orders').prepend(box)}if(!t.driver||t.driver.lat==null||t.driver.lng==null){box.innerHTML='<b>📍 تتبع المندوب</b><p class="muted">المندوب لم يرسل موقعه بعد.</p>';return}const lat=t.driver.lat,lng=t.driver.lng;box.innerHTML='<b>📍 المندوب: '+t.driver.name+'</b><p>الحالة: '+statusAr(t.status)+' · آخر تحديث: '+(t.driver.updatedAt||'-')+'</p><iframe title="خريطة المندوب" style="width:100%;height:260px;border:0;border-radius:12px" src="https://www.openstreetmap.org/export/embed.html?bbox='+(lng-0.01)+'%2C'+(lat-0.01)+'%2C'+(lng+0.01)+'%2C'+(lat+0.01)+'&layer=mapnik&marker='+lat+'%2C'+lng+'"></iframe>';}catch(e){alert(e.message)}}
+async function loadOrders(){activeView='orders';const seq=++ordersLoadSeq;try{const d=await apiP('/orders?_='+Date.now());if(seq!==ordersLoadSeq)return;const box=document.querySelector('#orders'),role=currentRole();if(!role){box.innerHTML='<div class="card"><h3>⚠️ لم يتم تحديد صلاحية الحساب</h3><p class="muted">سجّل الدخول بحساب التاجر أو المندوب ثم أعد فتح الصفحة.</p></div>';return;}if(role==='driver'){let u={};try{u=JSON.parse(localStorage.hesbahUser||'{}')}catch{};if(u.driverId)d.orders=d.orders.filter(o=>o.driverId===u.driverId);else d.orders=[];let gps=document.querySelector('#driver-gps-status');if(!gps){gps=document.createElement('div');gps.id='driver-gps-status';gps.className='card';gps.style.marginBottom='12px';box.parentNode.insertBefore(gps,box)}if(['driver_assigned','picked_up','out_for_delivery'].some(s=>d.orders.some(o=>o.status===s)))startDriverGPS();}box.innerHTML=d.orders.length?d.orders.map(o=>{const action=nextAction(role,o.status);return '<div class="card"><div class="row"><h3>طلب #'+o.number+'</h3><span class="status">'+statusAr(o.status)+'</span></div><p class="muted">👤 عرض حسب صلاحية: <b>'+roleAr(role)+'</b></p>'+stageBar(o.status,role)+'<p><b>الخطوة الحالية:</b> '+statusAr(o.status)+'</p>'+(action?'<p class="muted">الإجراء المطلوب الآن: '+action[1]+'</p>':'')+'<p>الإجمالي: <b>'+fmt(o.total)+'</b>'+(role==='admin'?' · العمولة: '+fmt(o.commission)+' ('+o.commissionRate+'%)':'')+'</p><p class="muted">'+(o.address||'بدون عنوان')+'</p><div class="row">'+(role==='merchant'&&o.status==='pending'?'<button class="btn" onclick="setStatus(\''+o.id+'\',\'accepted\')">قبول الطلب</button><button class="btn" onclick="setStatus(\''+o.id+'\',\'cancelled\')">رفض الطلب</button>':action?'<button class="btn" onclick="setStatus(\''+o.id+'\',\''+action[0]+'\')">'+action[1]+'</button>':'')+(role==='merchant'&&o.status==='ready_for_pickup'?'<button class="btn" onclick="assignDriver(\''+o.id+'\')">اختيار مندوب</button>':'')+(role!=='driver'&&o.driverId?'<button class="btn" onclick="trackOrder(\''+o.id+'\')">📍 متابعة المندوب</button>':'')+'</div></div>'}).join(''):'<div class="card"><p>لا توجد طلبات حالياً.</p></div>';for(const o of d.orders){if(o.driverId&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status)&&role!=='driver')trackOrder(o.id)}}catch(e){alert(e.message)}}
 let driverGpsWatch=null;
 let driverGpsLastSent=0;
 
