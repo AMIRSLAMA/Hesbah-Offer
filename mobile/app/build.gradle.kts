@@ -3,8 +3,18 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
-android { namespace="com.hesbah.offer"; compileSdk=35
-    defaultConfig { applicationId="com.hesbah.offer"; minSdk=24; targetSdk=35; versionCode=1; versionName="1.0.0"; buildConfigField("String","API_URL","\\"http://10.0.2.2:8090\\"") }
+android {
+    namespace = "com.hesbah.offer"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.hesbah.offer"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
+        buildConfigField("String", "API_URL", "\"http://10.0.2.2:8090\"")
+    }
 }
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
