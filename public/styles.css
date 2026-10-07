@@ -64,3 +64,11 @@
 .driver-page .role-top .logo{color:#f4fbff}
 .driver-page .role-top small{color:#b9d7dc;font-weight:800}
 .driver-page .role-top .logo span{color:#55d1c4}
+
+.driver-login-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#071f2b,#087c80)}
+.driver-login-card{width:min(430px,100%);background:#fff;border-radius:28px;padding:34px;box-shadow:0 25px 70px #001b2b55;text-align:center}
+.driver-login-brand{font-size:25px;font-weight:1000;letter-spacing:1px;color:#102b40}.driver-login-brand span{color:#0b9484}
+.driver-login-bike{font-size:56px;margin:18px 0 4px}.driver-login-card h1{margin:8px 0;color:#102b40;font-size:24px}.driver-login-card p{color:#71808a;font-size:13px;margin:0 0 22px}
+.driver-login-card .input{width:100%;min-height:50px;margin-bottom:12px;border:1px solid #dfe8eb;border-radius:13px;padding:12px 14px;box-sizing:border-box}
+.driver-login-card .btn{width:100%;min-height:50px;border-radius:14px;background:linear-gradient(135deg,#102b40,#0b9484);font-weight:900}
+.driver-login-error{min-height:20px;margin-top:13px;color:#b3262d;font-size:12px;font-weight:800}
