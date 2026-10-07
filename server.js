@@ -5,6 +5,7 @@ const {ensureDb}=require('./src/store');const auth=require('./src/auth');const a
 const app=express(),PORT=Number(process.env.PORT||8090);ensureDb();
 app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:false}));app.use(cors({origin:true}));
 app.use(express.json({limit:'2mb'}));app.use(express.urlencoded({extended:true}));app.use(morgan('combined'));
+app.use('/api',(req,res,next)=>{res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0');next()});
 app.use('/api/auth',rateLimit({windowMs:15*60*1000,max:100,standardHeaders:true,legacyHeaders:false}));
 app.get('/health',(req,res)=>res.json({ok:true,service:'hesbah-offer',version:'1.0.0',time:new Date().toISOString()}));
 app.use(express.static(path.join(__dirname,'public')));app.use('/api/auth',auth);app.use('/api',api);
