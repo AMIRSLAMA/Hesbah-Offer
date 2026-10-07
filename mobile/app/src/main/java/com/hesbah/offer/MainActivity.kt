@@ -7,6 +7,14 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +39,18 @@ private const val API=BuildConfig.API_URL
 private val JSON="application/json".toMediaType()
 data class Session(val token:String,val id:String,val name:String,val role:String,val driverId:String?)
 class Api(private val context:Context){
+ private fun authBuilder(path:String)=Request.Builder().url(API+path).apply{if(token().isNotBlank())header("Authorization","Bearer "+token())}
+ suspend fun driverApplication(fields:Map<String,String>,files:Map<String,Uri>):JSONObject=withContext(Dispatchers.IO){
+   val body=MultipartBody.Builder().setType(MultipartBody.FORM).apply{
+     fields.forEach{(k,v)->addFormDataPart(k,v)}
+     files.forEach{(k,uri)->context.contentResolver.openInputStream(uri)?.use{input->
+       val tmp=File.createTempFile("upload_","",context.cacheDir);tmp.outputStream().use{input.copyTo(it)}
+       val mime=context.contentResolver.getType(uri)?: "image/jpeg"
+       addFormDataPart(k,tmp.name,tmp.asRequestBody(mime.toMediaType()))
+     }}
+   }.build()
+   client.newCall(authBuilder("/api/driver-applications").post(body).build()).execute().use{r->val raw=r.body?.string()?:"{}";val j=JSONObject(raw);if(!r.isSuccessful)throw Exception(j.optString("message","تعذر إرسال الطلب"));j}
+ }
  private val client=OkHttpClient()
  private val prefs=context.getSharedPreferences("hesbah_offer",Context.MODE_PRIVATE)
  fun token()=prefs.getString("token","")?:""
@@ -43,19 +63,36 @@ class Api(private val context:Context){
    client.newCall(req).execute().use{r->val raw=r.body?.string()?:"{}";val j=JSONObject(raw);if(!r.isSuccessful)throw Exception(j.optString("message","حدث خطأ"));j}
  }
 }
-class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
+
+@Composable fun DriverRegistration(api:Api,onBack:()->Unit){
+ var name by remember{mutableStateOf("")};var phone by remember{mutableStateOf("")};var nationalId by remember{mutableStateOf("")};var address by remember{mutableStateOf("")}
+ var vehicleType by remember{mutableStateOf("")};var brand by remember{mutableStateOf("")};var model by remember{mutableStateOf("")};var plate by remember{mutableStateOf("")};var consent by remember{mutableStateOf(false)}
+ var message by remember{mutableStateOf("")};var busy by remember{mutableStateOf(false)};var currentKey by remember{mutableStateOf("")};val files=remember{mutableStateMapOf<String,Uri>()};val context=LocalContext.current;val scope=rememberCoroutineScope()
+ val launcher=rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()){ok->if(ok&&currentKey.isNotBlank()){files[currentKey]=pendingUri}}
+ fun camera(key:String){currentKey=key;val file=File.createTempFile("hesbah_"+key+"_","jpg",context.cacheDir);pendingUri=FileProvider.getUriForFile(context,context.packageName+".fileprovider",file);launcher.launch(pendingUri)}
+ Column(Modifier.fillMaxSize().padding(18.dp)){TextButton(onClick=onBack){Text("← العودة للدخول")};Text("تسجيل مندوب",style=MaterialTheme.typography.headlineMedium);Text("سيتم مراجعة البيانات قبل تفعيل الحساب.")
+ listOf("name" to "الاسم بالكامل","phone" to "رقم الهاتف","nationalId" to "الرقم القومي","address" to "العنوان","vehicleType" to "نوع المركبة","brand" to "الماركة","model" to "الموديل","plate" to "رقم اللوحة").forEach{(k,l)->OutlinedTextField(value=when(k){"name"->name;"phone"->phone;"nationalId"->nationalId;"address"->address;"vehicleType"->vehicleType;"brand"->brand;"model"->model;else->plate},onValueChange={v->when(k){"name"->name=v;"phone"->phone=v;"nationalId"->nationalId=v;"address"->address=v;"vehicleType"->vehicleType=v;"brand"->brand=v;"model"->model=v;else->plate=v}},label={Text(l)},modifier=Modifier.fillMaxWidth().padding(vertical=3.dp))}
+ listOf("selfie" to "🤳 صورة سيلفي","idFront" to "🪪 البطاقة - وجه","idBack" to "🪪 البطاقة - ظهر","drivingLicense" to "رخصة القيادة","vehicleLicense" to "رخصة المركبة").forEach{(k,l)->Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.SpaceBetween){Text(if(files.containsKey(k))"✓ $l" else "⚠ $l");Button(onClick={camera(k)}){Text("تصوير")}}}
+ Row{Checkbox(consent,{consent=it});Text("أوافق على جمع بيانات التحقق والمستندات لغرض التحقق من الهوية والعمل كمندوب لدى Hesbah Offer.")};if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.error)
+ Button(enabled=!busy,onClick={scope.launch{try{busy=true;message="جاري رفع المستندات...";if(name.isBlank()||phone.isBlank()||nationalId.isBlank()||address.isBlank()||vehicleType.isBlank()||brand.isBlank()||model.isBlank()||plate.isBlank()||!consent||files.size<5)throw Exception("أكمل البيانات وصوّر كل المستندات المطلوبة");val fields=mapOf("name" to name,"phone" to phone,"nationalId" to nationalId,"address" to address,"vehicleType" to vehicleType,"vehicleBrand" to brand,"vehicleModel" to model,"vehiclePlate" to plate,"consent" to "yes");val j=api.driverApplication(fields,files);message="تم إرسال الطلب ✓\\nرقم الطلب: "+j.optString("applicationId");}catch(e:Exception){message=e.message?:"تعذر الإرسال"}finally{busy=false}}},modifier=Modifier.fillMaxWidth()){Text(if(busy)"جاري الإرسال..." else "إرسال طلب التسجيل")}}
+}
+private lateinit var pendingUri:Uri
+\nclass MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
 @Composable fun HesbahApp(api:Api){
  var session by remember{mutableStateOf(api.session())}
  if(session==null) Login(api){session=api.session()} else if(session!!.role=="driver") DriverHome(api,session!!){api.clear();session=null} else CustomerHome(api,session!!){api.clear();session=null}
 }
 @Composable fun Login(api:Api,onDone:()->Unit){
+ var register by remember{mutableStateOf(false)}
+ if(register){DriverRegistration(api){register=false};return}
  var username by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var error by remember{mutableStateOf("")};val scope=rememberCoroutineScope()
  Column(Modifier.fillMaxSize().padding(24.dp),verticalArrangement=Arrangement.Center){
    Text("HESBAH OFFER",style=MaterialTheme.typography.headlineLarge);Text("اطلبها. نجيبها.",style=MaterialTheme.typography.titleMedium);Spacer(Modifier.height(24.dp))
    OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
    OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth())
    if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
-   Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
+   TextButton(onClick={register=true}){Text("تسجيل مندوب جديد")};Spacer(Modifier.height(8.dp));Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
+ }
  }
 }
 @Composable fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
