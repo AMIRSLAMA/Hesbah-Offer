@@ -106,12 +106,12 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
   const merchantNet=money(netSubtotal-commission);
   const total=money(netSubtotal+delivery);
   const id='ord_'+uuid(),timestamp=now();
-  const o={id,number:String(Date.now()).slice(-8),customerId:req.user.id,storeId,items:lines,address,lat:lat??null,lng:lng??null,paymentMethod,couponId,subtotal,discount,delivery,total,commissionRate,commission,merchantNet,driverId:null,status:'pending',createdAt:timestamp,updatedAt:timestamp,timeline:[{status:'pending',at:timestamp}]};
+  const o={id,number:String(Date.now()).slice(-8),customerId:req.user.id,storeId,items:lines,address,lat:lat??null,lng:lng??null,paymentMethod,paymentStatus:paymentMethod==='cash'?'cash_on_delivery':'pending',couponId,subtotal,discount,delivery,total,commissionRate,commission,merchantNet,driverId:null,status:'pending',createdAt:timestamp,updatedAt:timestamp,timeline:[{status:'pending',at:timestamp}]};
   db.orders.push(o);
   for(const line of lines){const p=db.products.find(x=>x.id===line.productId);if(p.stock!=null&&p.stock>0)p.stock-=line.qty;}
   notify(db,req.user.id,'تم استلام طلبك','رقم الطلب '+o.number);
   notify(db,store.ownerUserId,'طلب جديد','لديك طلب جديد رقم '+o.number);
-  addLedger(db,{type:'order',orderId:o.id,storeId,customerId:req.user.id,subtotal:netSubtotal,commission,merchantNet,delivery,driverEarning:delivery});
+  addLedger(db,{type:'order',orderId:o.id,storeId,customerId:req.user.id,subtotal:netSubtotal,commission,merchantNet,delivery,driverEarning:delivery,paymentMethod:o.paymentMethod,paymentStatus:o.paymentStatus});
   write(db);res.status(201).json({ok:true,order:visibleOrderData(req,o)});
  }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إنشاء الطلب'});}
 });
