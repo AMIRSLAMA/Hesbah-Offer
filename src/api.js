@@ -182,4 +182,26 @@ router.post('/ratings',requireAuth,allow('customer'),(req,res)=>{
 });
 router.get('/notifications',requireAuth,(req,res)=>{const db=read();res.json({ok:true,notifications:db.notifications.filter(n=>n.userId===req.user.id).slice(-100).reverse()})});
 router.patch('/notifications/:id/read',requireAuth,(req,res)=>{const db=read(),n=db.notifications.find(x=>x.id===req.params.id&&x.userId===req.user.id);if(!n)return res.status(404).json({ok:false});n.read=true;write(db);res.json({ok:true})});
+
+router.get('/users',requireAuth,allow('admin'),(req,res)=>{const db=read();res.json({ok:true,users:db.users.map(u=>({id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId,createdAt:u.createdAt}))});});
+router.post('/users',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),{name,phone,username,password,role,storeId}=req.body||{};
+ if(!name||!username||!password||!['admin','merchant','driver','customer'].includes(role))return res.status(400).json({ok:false,message:'بيانات المستخدم غير صحيحة'});
+ if(db.users.some(u=>u.username.toLowerCase()===String(username).toLowerCase()))return res.status(409).json({ok:false,message:'اسم المستخدم مستخدم بالفعل'});
+ const u={id:'u_'+uuid(),name:String(name),phone:String(phone||''),username:String(username),password:require('bcryptjs').hashSync(String(password),10),role,storeId:storeId||undefined,createdAt:now()};
+ if(role==='driver'){const d={id:'d_'+uuid(),userId:u.id,name:u.name,phone:u.phone,status:'offline',rating:5,lat:null,lng:null,deliveries:0};db.drivers.push(d);u.driverId=d.id;}
+ db.users.push(u);write(db);res.status(201).json({ok:true,user:{id:u.id,name:u.name,phone:u.phone,username:u.username,role:u.role,storeId:u.storeId,driverId:u.driverId}});
+});
+router.patch('/users/:id',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),u=user(db,req.params.id);if(!u)return res.status(404).json({ok:false,message:'المستخدم غير موجود'});
+ for(const k of ['name','phone','role','storeId'])if(req.body[k]!==undefined)u[k]=req.body[k];
+ if(req.body.password)u.password=require('bcryptjs').hashSync(String(req.body.password),10);
+ write(db);res.json({ok:true});
+});
+router.post('/settlements',requireAuth,allow('admin'),(req,res)=>{
+ const db=read(),{ownerType,ownerId}=req.body||{};if(!['merchant','driver'].includes(ownerType)||!ownerId)return res.status(400).json({ok:false,message:'بيانات التسوية غير صحيحة'});
+ const orders=db.orders.filter(o=>o.status==='delivered'&&(ownerType==='merchant'?o.storeId===ownerId:o.driverId===ownerId));
+ const amount=money(ownerType==='merchant'?orders.reduce((a,o)=>a+o.merchantNet,0):orders.reduce((a,o)=>a+o.delivery,0));
+ const s={id:'set_'+uuid(),ownerType,ownerId,orderIds:orders.map(o=>o.id),amount,status:'pending',createdAt:now()};db.settlements.push(s);write(db);res.status(201).json({ok:true,settlement:s});
+});
 module.exports=router;
