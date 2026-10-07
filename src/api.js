@@ -249,7 +249,7 @@ router.get('/driver-applications',requireAuth,allow('admin'),(req,res)=>{
  res.json({ok:true,applications:apps.map(x=>({...x,documents:Object.fromEntries(Object.entries(x.documents||{}).map(([k,v])=>[k,{name:v.originalName,size:v.size}]))}))});
 });
 router.get('/driver-applications/:id/document/:type',requireAuth,allow('admin'),(req,res)=>{
- const db=read(),app=(db.driverApplications||[]).find(x=>x.id===req.params.id),doc=app?.documents?.[req.params.type];
+ const allowedDocs=['selfie','idFront','idBack','drivingLicense','vehicleLicense'];if(!allowedDocs.includes(req.params.type))return res.status(400).json({ok:false,message:'نوع المستند غير صحيح'});const db=read(),app=(db.driverApplications||[]).find(x=>x.id===req.params.id),doc=app?.documents?.[req.params.type];
  if(!doc)return res.status(404).json({ok:false,message:'المستند غير موجود'});
  const file=path.join(privateDocsDir,path.basename(doc.filename));
  if(!fs.existsSync(file))return res.status(404).json({ok:false,message:'ملف المستند غير موجود'});
