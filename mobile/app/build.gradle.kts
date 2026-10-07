@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 android {
+    buildFeatures { buildConfig = true }
     namespace = "com.hesbah.offer"
     compileSdk = 35
 
