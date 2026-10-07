@@ -56,6 +56,7 @@ class Api(private val context:Context){
  fun session():Session?=prefs.getString("session",null)?.let{val j=JSONObject(it);Session(j.getString("token"),j.getString("id"),j.getString("name"),j.getString("role"),j.optString("driverId").ifBlank{null})}
  fun save(token:String,u:JSONObject){prefs.edit().putString("token",token).putString("session",JSONObject().apply{put("token",token);put("id",u.getString("id"));put("name",u.getString("name"));put("role",u.getString("role"));put("driverId",u.optString("driverId"))}.toString()).apply()}
  fun clear(){prefs.edit().clear().apply()}
+ suspend fun registerCustomer(name:String,phone:String,email:String,username:String,password:String):JSONObject=call("/api/auth/register","POST",JSONObject().put("name",name).put("phone",phone).put("email",email).put("username",username).put("password",password).toString())
  suspend fun call(path:String,method:String="GET",body:String?=null):JSONObject=withContext(Dispatchers.IO){
    val b=body?.toRequestBody(JSON)
    val req=Request.Builder().url(API+path).apply{if(token().isNotBlank())header("Authorization","Bearer "+token())}.method(method,b).build()
