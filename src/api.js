@@ -59,7 +59,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
   const lines=items.map(i=>{
    const p=db.products.find(x=>x.id===i.productId&&x.storeId===storeId&&x.available);
    const qty=Math.max(1,Math.floor(Number(i.qty||1)));
-   if(!p||p.stock===0||Number(p.stock)<qty)throw new Error('منتج غير متاح أو الكمية غير متوفرة');
+   if(!p||p.stock===0||!p.available||Number(p.stock)>-1&&Number(p.stock)<qty)throw new Error('منتج غير متاح أو الكمية غير متوفرة');
    const total=money(p.price*qty);subtotal+=total;
    return {productId:p.id,name:p.name,price:p.price,qty,total};
   });
