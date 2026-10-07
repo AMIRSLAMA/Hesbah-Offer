@@ -27,3 +27,33 @@
 .customer-page .customer-drawer-divider + .customer-drawer-nav .drawer-item:nth-child(2) span{background:#edf2f5;color:#405466}
 .customer-page .customer-drawer-divider + .customer-drawer-nav .drawer-item:nth-child(3) span{background:#e8f5f3;color:#0b9484}
 .customer-page .customer-drawer-divider + .customer-drawer-nav .drawer-item:hover{border-color:#dcecea}
+
+/* Hesbah customer action modals */
+.customer-page .modal{background:rgba(8,20,29,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);padding:18px}
+.customer-page .modalbox{width:min(520px,100%);border:1px solid #e4ecef;border-radius:26px;padding:28px;box-shadow:0 28px 90px #102b4040;background:linear-gradient(180deg,#fff 0%,#fbfdfd 100%);direction:rtl}
+.customer-page .modalbox-wide{width:min(720px,100%)}
+.customer-page .hesbah-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}
+.customer-page .hesbah-modal-kicker{display:block;color:#0b9484;font-size:10px;font-weight:900;letter-spacing:1.8px;margin-bottom:7px}
+.customer-page .hesbah-modal-head h2{margin:0;color:#102b40;font-size:27px;letter-spacing:-.5px}
+.customer-page .hesbah-modal-head p{margin:6px 0 0;color:#81909b;font-size:12px;line-height:1.7}
+.customer-page .hesbah-modal-close{width:38px;height:38px;flex:none;border-radius:12px;background:#f0f4f5;color:#536571;font-size:23px;display:grid;place-items:center}
+.customer-page .hesbah-modal-close:hover{background:#e5f4f1;color:#0b9484}
+.customer-page .modalbox>.input{display:block;width:100%;margin:0 0 12px;min-height:48px;border-radius:13px;border-color:#dfe8eb;background:#fff;padding:13px 14px;outline:0}
+.customer-page .modalbox>.input:focus{border-color:#72cbbf;box-shadow:0 0 0 4px #0b948412}
+.customer-page .modalbox textarea.input{min-height:92px;resize:vertical}
+.customer-page .hesbah-modal-primary{width:100%;min-height:50px;margin-top:6px;border-radius:14px;background:linear-gradient(135deg,#102b40,#0b9484);box-shadow:0 10px 24px #0b948426}
+.customer-page .hesbah-modal-primary:hover{transform:translateY(-1px)}
+.customer-page .hesbah-modal-switch{text-align:center;color:#7c8b95;font-size:12px;margin:18px 0 0}.customer-page .hesbah-modal-switch button{background:none;color:#0b9484;font-weight:900;padding:0}
+.customer-page .hesbah-modal-divider{height:1px;background:#e9eff1;margin:22px 0}
+.customer-page .hesbah-danger-btn{background:#fff0f0;color:#b3262d;border:1px solid #ffd4d4}
+.customer-page .modalbox-wide .grid{grid-template-columns:repeat(2,1fr)}
+.customer-page .hesbah-cart-total{display:flex;justify-content:space-between;align-items:center;margin:15px 0;padding:16px;border-radius:16px;background:#f0f8f6;border:1px solid #d9ebe7;color:#405466}.customer-page .hesbah-cart-total strong{font-size:24px;color:#0b9484}
+.customer-page #cart{margin-bottom:10px}.customer-page #cart .row{padding:12px 0!important;border-bottom:1px solid #edf1f3!important}
+.customer-page #cart .row button{width:30px;height:30px;border-radius:9px;background:#fff0f0;color:#b3262d}
+.customer-page #payment{margin-bottom:8px}
+.customer-page #developerChatModal .modalbox{border-top:4px solid #0b9484}
+.customer-page .developer-chat-box textarea{min-height:120px}
+.customer-page .developer-chat-box .btn{width:100%;min-height:50px;border-radius:14px;background:linear-gradient(135deg,#102b40,#0b9484);font-weight:900}
+.customer-page .developer-chat-box select.input{width:100%;margin-bottom:12px}
+.customer-page .developer-chat-box br{display:none}
+@media(max-width:600px){.customer-page .modal{padding:10px}.customer-page .modalbox{padding:21px;border-radius:22px}.customer-page .hesbah-modal-head h2{font-size:23px}.customer-page .modalbox-wide .grid{grid-template-columns:1fr}.customer-page .hesbah-cart-total{margin-top:12px}}
