@@ -13,4 +13,5 @@ async function login(){try{const d=await api('/auth/login',{method:'POST',body:J
 async function register(){try{const d=await api('/auth/register',{method:'POST',body:JSON.stringify({name:$('#rname').value,phone:$('#rphone').value,username:$('#ruser').value,password:$('#rpass').value})});setUser(d)}catch(e){alert(e.message)}}
 function logout(){localStorage.clear();location.href='/'}
 window.openStore=openStore;window.addCart=addCart;window.renderCart=renderCart;window.checkout=checkout;window.loadOrders=loadOrders;window.login=login;window.register=register;window.logout=logout;window.accountAction=accountAction;
-if($('#stores'))loadMarket();if($('#myOrders'))loadOrders();
+async function loadPaymentMethods(){const box=$('#payment');if(!box)return;try{const d=await api('/payment-methods');box.innerHTML=d.paymentMethods.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('')}catch(e){}}
+if($('#stores')){loadMarket();loadPaymentMethods()}if($('#myOrders'))loadOrders();
