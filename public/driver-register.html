@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hesbah Offer | تسجيل مندوب</title><link rel="stylesheet" href="/styles.css">
+<style>.verify{max-width:850px;margin:30px auto}.verify .grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}.verify input,.verify textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin-top:6px}.verify label{display:block;font-weight:700}.verify .section{margin-top:18px}.verify small{display:block;color:#777;margin-top:5px}</style>
+</head>
+<body>
+<header class="top"><div class="logo">HESBAH <span>OFFER</span></div></header>
+<main class="container verify">
+<div class="hero"><div><span class="pill">تسجيل مندوب توصيل</span><h1>بيانات التحقق قبل تفعيل الحساب</h1><p>بنراجع بياناتك ومستنداتك قبل السماح لك باستلام الطلبات.</p></div><div>🪪</div></div>
+<form id="form" class="card" style="margin-top:22px">
+<div class="section"><h2>البيانات الشخصية</h2><div class="grid">
+<label>الاسم بالكامل<input name="name" required></label>
+<label>رقم الهاتف<input name="phone" inputmode="tel" required></label>
+<label>الرقم القومي<input name="nationalId" inputmode="numeric" minlength="10" required></label>
+<label>العنوان<input name="address" required></label>
+</div></div>
+<div class="section"><h2>بيانات المركبة</h2><div class="grid">
+<label>نوع المركبة<input name="vehicleType" placeholder="موتوسيكل / سكوتر / دراجة..." required></label>
+<label>الماركة<input name="vehicleBrand" required></label>
+<label>الموديل<input name="vehicleModel" required></label>
+<label>رقم اللوحة<input name="vehiclePlate" required></label>
+</div></div>
+<div class="section"><h2>مستندات التحقق</h2><div class="grid">
+<label>صورة سيلفي واضحة<input type="file" name="selfie" accept="image/jpeg,image/png,image/webp" capture="user" required><small>صورة حديثة للوجه بدون نظارة شمسية.</small></label>
+<label>البطاقة الشخصية - الوجه<input type="file" name="idFront" accept="image/jpeg,image/png,image/webp" capture="environment" required></label>
+<label>البطاقة الشخصية - الظهر<input type="file" name="idBack" accept="image/jpeg,image/png,image/webp" capture="environment" required></label>
+<label>رخصة القيادة<input type="file" name="drivingLicense" accept="image/jpeg,image/png,image/webp" capture="environment" required></label>
+<label>رخصة المركبة<input type="file" name="vehicleLicense" accept="image/jpeg,image/png,image/webp" capture="environment" required></label>
+</div></div>
+<div class="section"><label>ملاحظات إضافية<textarea name="notes" rows="3"></textarea></label></div>
+<div class="section"><label style="font-weight:500"><input type="checkbox" name="consent" value="yes" required style="width:auto"> أوافق صراحةً على جمع واستخدام بيانات التحقق والمستندات المقدمة لغرض التحقق من هويتي وأهليتي للعمل كمندوب لدى Hesbah Offer، وفق سياسة الخصوصية المعمول بها.</label></div>
+<button class="btn" style="margin-top:18px;width:100%" id="submit">إرسال طلب التسجيل</button>
+<p id="msg" class="muted"></p>
+</form>
+</main>
+<script>
+const form=document.getElementById('form'),msg=document.getElementById('msg'),btn=document.getElementById('submit');
+form.addEventListener('submit',async e=>{e.preventDefault();btn.disabled=true;msg.textContent='جاري رفع المستندات...';try{const fd=new FormData(form);const r=await fetch('/api/driver-applications',{method:'POST',body:fd});const j=await r.json();if(!r.ok)throw new Error(j.message||'تعذر التسجيل');form.reset();msg.textContent='تم إرسال طلبك بنجاح. رقم الطلب: '+j.applicationId+' — سيتم مراجعته قبل تفعيل الحساب.';}catch(e){msg.textContent=e.message;}finally{btn.disabled=false;}});
+</script>
+</body></html>
