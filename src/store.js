@@ -1,6 +1,6 @@
 const fs=require('fs');const path=require('path');const bcrypt=require('bcryptjs');
 const dir=path.join(__dirname,'..','data');const file=path.join(dir,'db.json');
-function seed(){return {settings:{platformName:'Hesbah Offer',defaultCommission:10,deliveryBase:25,currency:'EGP',version:'1.0.0'},
+function seed(){return {settings:{platformName:'Hesbah Offer',defaultCommission:10,deliveryBase:25,currency:'EGP',version:'1.0.0',paymentMethods:[{id:'cash',name:'الدفع عند الاستلام',enabled:true},{id:'card',name:'بطاقة بنكية',enabled:false},{id:'wallet',name:'محفظة إلكترونية',enabled:false}]},
 users:[
 {id:'u_admin',name:'Hesbah Admin',phone:'01000000000',username:'admin',password:bcrypt.hashSync('123456',10),role:'admin'},
 {id:'u_merchant',name:'Demo Store',phone:'01111111111',username:'merchant',password:bcrypt.hashSync('123456',10),role:'merchant',storeId:'s_demo'},
