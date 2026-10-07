@@ -63,10 +63,14 @@ function translatePage(lang){
   });
   localStorage.setItem('hesbahLang',lang);
 }
-function toggleLanguage(){
+window.toggleLanguage=function(){
   const next=document.documentElement.lang==='en'?'ar':'en';
   translatePage(next);
-}
+};
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.hc-language');
+  if(btn){e.preventDefault();window.toggleLanguage();}
+});
 document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('hesbahLang');
   translatePage(saved==='en'?'en':'ar');
