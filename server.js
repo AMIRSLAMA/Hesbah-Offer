@@ -1,8 +1,11 @@
 require('dotenv').config();
 const express=require('express'),helmet=require('helmet'),cors=require('cors'),morgan=require('morgan'),path=require('path');
+const rateLimit=require('express-rate-limit');
 const {ensureDb}=require('./src/store');const auth=require('./src/auth');const api=require('./src/api');
 const app=express(),PORT=Number(process.env.PORT||8090);ensureDb();
-app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:false}));app.use(cors({origin:true}));app.use(express.json({limit:'2mb'}));app.use(express.urlencoded({extended:true}));app.use(morgan('combined'));
+app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:false}));app.use(cors({origin:true}));
+app.use(express.json({limit:'2mb'}));app.use(express.urlencoded({extended:true}));app.use(morgan('combined'));
+app.use('/api/auth',rateLimit({windowMs:15*60*1000,max:100,standardHeaders:true,legacyHeaders:false}));
 app.get('/health',(req,res)=>res.json({ok:true,service:'hesbah-offer',version:'1.0.0',time:new Date().toISOString()}));
 app.use(express.static(path.join(__dirname,'public')));app.use('/api/auth',auth);app.use('/api',api);
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
