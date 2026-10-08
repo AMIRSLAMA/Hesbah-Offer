@@ -64,7 +64,7 @@ router.post('/profile/photo',requireAuth,allow('customer'),profileUpload.single(
 router.get('/profile/photo',requireAuth,allow('customer'),(req,res)=>{const db=read(),u=user(db,req.user.id);if(!u||!u.photo)return res.status(404).json({ok:false,message:'لا توجد صورة'});const file=path.join(profileDir,path.basename(u.photo));if(!fs.existsSync(file))return res.status(404).json({ok:false,message:'الصورة غير موجودة'});res.sendFile(file);});
 router.get('/marketplace',(req,res)=>{
  const db=read();const q=String(req.query.q||'').trim().toLowerCase();const cat=String(req.query.category||'').trim();
- let stores=db.stores.filter(s=>s.isOpen);
+ let stores=db.stores.filter(s=>s.isOpen!==false&&s.isOpen!=='false');
  if(cat)stores=stores.filter(s=>s.category===cat);
  if(q)stores=stores.filter(s=>(s.name+' '+s.description+' '+s.category).toLowerCase().includes(q));
  res.json({ok:true,stores:stores.map(publicStore),categories:[...new Set(db.stores.map(s=>s.category).filter(Boolean))],settings:{currency:db.settings.currency}});
