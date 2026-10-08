@@ -10,6 +10,15 @@ const router=express.Router();
 const privateDocsDir=path.join(__dirname,'..','data','private','driver-docs');
 fs.mkdirSync(privateDocsDir,{recursive:true});
 const profileDir=path.join(__dirname,'..','data','private','customer-profiles');fs.mkdirSync(profileDir,{recursive:true});
+const productImagesDir=path.join(__dirname,'..','data','product-images');fs.mkdirSync(productImagesDir,{recursive:true});
+const productImageUpload=multer({
+ storage:multer.diskStorage({
+  destination:(_,__,cb)=>cb(null,productImagesDir),
+  filename:(_,file,cb)=>cb(null,Date.now()+'-'+uuid()+path.extname(file.originalname).toLowerCase())
+ }),
+ limits:{fileSize:5*1024*1024},
+ fileFilter:(_,file,cb)=>/^image\/(jpeg|png|webp)$/.test(file.mimetype)?cb(null,true):cb(new Error('الصورة يجب أن تكون JPG أو PNG أو WEBP'))
+});
 const profileUpload=multer({storage:multer.diskStorage({destination:(_,__,cb)=>cb(null,profileDir),filename:(_,file,cb)=>cb(null,Date.now()+'-'+uuid()+path.extname(file.originalname).toLowerCase())}),limits:{fileSize:3*1024*1024},fileFilter:(_,file,cb)=>/^image\/(jpeg|png|webp)$/.test(file.mimetype)?cb(null,true):cb(new Error('الصورة يجب أن تكون JPG أو PNG أو WEBP'))});
 const upload=multer({
  storage:multer.diskStorage({
@@ -222,6 +231,15 @@ router.post('/stores',requireAuth,allow('admin'),(req,res)=>{
   res.status(201).json({ok:true,store:s,owner:userId?{id:userId,name:String(b.ownerName||name).trim(),username,role:'merchant',storeId}:null});
  }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إنشاء المتجر'});}
 });
+router.post('/products/image',requireAuth,allow('admin','merchant'),productImageUpload.single('image'),(req,res)=>{
+ if(!req.file)return res.status(400).json({ok:false,message:'اختر صورة'});
+ res.json({ok:true,image:'/api/products/image/'+encodeURIComponent(req.file.filename)});
+});
+router.get('/products/image/:name',(req,res)=>{
+ const file=path.join(productImagesDir,path.basename(req.params.name));
+ if(!fs.existsSync(file))return res.status(404).json({ok:false,message:'الصورة غير موجودة'});
+ res.sendFile(file);
+});
 router.get('/products/manage',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read();let p=db.products;if(req.user.role==='merchant')p=p.filter(x=>x.storeId===req.user.storeId);res.json({ok:true,products:p});
 });
@@ -235,6 +253,16 @@ router.patch('/products/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
  if(req.user.role==='merchant'&&p.storeId!==req.user.storeId)return res.status(403).json({ok:false});
  for(const k of ['name','description','price','oldPrice','image','available','stock','category'])if(req.body[k]!==undefined)p[k]=req.body[k];
  write(db);res.json({ok:true,product:p});
+});
+router.delete('/products/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
+ const db=read(),p=db.products.find(x=>x.id===req.params.id);
+ if(!p)return res.status(404).json({ok:false,message:'المنتج غير موجود'});
+ if(req.user.role==='merchant'&&p.storeId!==req.user.storeId)return res.status(403).json({ok:false,message:'غير مصرح'});
+ if(p.image&&p.image.includes('/api/products/image/')){
+  const file=path.join(productImagesDir,path.basename(decodeURIComponent(p.image.split('/').pop())));
+  if(fs.existsSync(file))fs.unlinkSync(file);
+ }
+ db.products=db.products.filter(x=>x.id!==p.id);write(db);res.json({ok:true});
 });
 router.get('/coupons',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,coupons:read().coupons}));
 router.post('/coupons',requireAuth,allow('admin'),(req,res)=>{
