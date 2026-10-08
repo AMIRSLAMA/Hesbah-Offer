@@ -198,8 +198,29 @@ router.patch('/stores/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
  s.updatedAt=now();write(db);res.json({ok:true,store:s});
 });
 router.post('/stores',requireAuth,allow('admin'),(req,res)=>{
- const db=read(),s={id:'s_'+uuid(),name:String(req.body.name||'متجر جديد'),category:String(req.body.category||'عام'),description:String(req.body.description||''),rating:5,commission:req.body.commission!=null?Number(req.body.commission):db.settings.defaultCommission,deliveryFee:req.body.deliveryFee!=null?Number(req.body.deliveryFee):db.settings.deliveryBase,isOpen:true,lat:null,lng:null,ownerUserId:req.body.ownerUserId||null};
- db.stores.push(s);write(db);res.status(201).json({ok:true,store:s});
+ try{
+  const db=read(),b=req.body||{};
+  const name=String(b.name||'').trim(),category=String(b.category||'عام').trim();
+  const username=String(b.username||'').trim(),password=String(b.password||'');
+  if(!name)return res.status(400).json({ok:false,message:'اسم المتجر مطلوب'});
+  if(username&&username.length<4)return res.status(400).json({ok:false,message:'اسم مستخدم صاحب المتجر يجب أن يكون 4 أحرف على الأقل'});
+  if(username&&password.length<6)return res.status(400).json({ok:false,message:'كلمة المرور يجب أن تكون 6 أحرف على الأقل'});
+  if(username&&db.users.some(u=>u.username.toLowerCase()===username.toLowerCase()))return res.status(409).json({ok:false,message:'اسم المستخدم مستخدم بالفعل'});
+  const storeId='s_'+uuid(),userId=username?'u_'+uuid():null;
+  const s={id:storeId,name,category,description:String(b.description||'').trim(),rating:5,
+   commission:b.commission!=null?Math.max(0,Number(b.commission)):db.settings.defaultCommission,
+   deliveryFee:b.deliveryFee!=null?Math.max(0,Number(b.deliveryFee)):db.settings.deliveryBase,
+   isOpen:b.isOpen!==false,lat:b.lat===''||b.lat==null?null:Number(b.lat),lng:b.lng===''||b.lng==null?null:Number(b.lng),
+   ownerUserId:userId};
+  db.stores.push(s);
+  if(username){
+   const u={id:userId,name:String(b.ownerName||name).trim(),phone:String(b.phone||'').trim(),email:String(b.email||'').trim().toLowerCase(),
+    username,password:bcrypt.hashSync(password,10),role:'merchant',storeId,createdAt:now()};
+   db.users.push(u);
+  }
+  write(db);
+  res.status(201).json({ok:true,store:s,owner:userId?{id:userId,name:String(b.ownerName||name).trim(),username,role:'merchant',storeId}:null});
+ }catch(e){res.status(400).json({ok:false,message:e.message||'تعذر إنشاء المتجر'});}
 });
 router.get('/products/manage',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read();let p=db.products;if(req.user.role==='merchant')p=p.filter(x=>x.storeId===req.user.storeId);res.json({ok:true,products:p});
