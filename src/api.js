@@ -139,6 +139,8 @@ router.post('/orders/:id/assign-driver',requireAuth,allow('admin','merchant'),(r
  d.status='busy';notify(db,d.userId,'مهمة توصيل جديدة','تم إسناد الطلب '+o.number+' إليك');notify(db,o.customerId,'تم تعيين المندوب','جارٍ تجهيز التوصيل');
  write(db);res.json({ok:true,order:visibleOrderData(req,o),driver:d});
 });
+router.get('/drivers/me',requireAuth,allow('driver'),(req,res)=>{const db=read(),d=driverFor(db,req.user.driverId);if(!d)return res.status(404).json({ok:false,message:'المندوب غير موجود'});res.json({ok:true,driver:{id:d.id,name:d.name,status:d.status||'available',deliveries:d.deliveries||0}});});
+router.patch('/drivers/me/status',requireAuth,allow('driver'),(req,res)=>{const db=read(),d=driverFor(db,req.user.driverId),next=String(req.body.status||'');if(!d)return res.status(404).json({ok:false,message:'المندوب غير موجود'});if(!['available','unavailable'].includes(next))return res.status(400).json({ok:false,message:'حالة غير صالحة'});const busy=db.orders.some(o=>o.driverId===d.id&&['driver_assigned','picked_up','out_for_delivery'].includes(o.status));if(next==='unavailable'&&busy)return res.status(409).json({ok:false,message:'لا يمكن إيقاف التوفر أثناء وجود طلب توصيل نشط'});d.status=next;d.updatedAt=now();write(db);res.json({ok:true,status:d.status});});
 router.get('/drivers',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read();const drivers=req.user.role==='admin'?db.drivers.map(d=>({...d,user:undefined})):db.drivers.map(d=>({id:d.id,name:d.name,phone:d.phone,status:d.status,rating:d.rating,lat:d.lat??null,lng:d.lng??null,updatedAt:d.updatedAt||null,deliveries:d.deliveries||0}));res.json({ok:true,drivers});
 });
