@@ -160,7 +160,50 @@ function exportDriverApplications(){
  }).catch(e=>alert(e.message));
 }
 async function loadAdminStores(){activeView='adminStores';try{const d=await apiP('/stores');const rows=d.stores||[];document.querySelector('#orders').innerHTML='<div class="admin-list-head"><div><h2>🏪 إدارة المتاجر</h2><p class="muted">متابعة المتاجر وحالة استقبال الطلبات والعمولة.</p></div><button class="btn" onclick="addAdminStore()">+ إضافة متجر</button></div>'+(rows.length?'<div class="admin-grid">'+rows.map(s=>'<div class="admin-item-card"><div class="row"><strong>'+s.name+'</strong><span class="status '+(s.isOpen?'':'danger')+'">'+(s.isOpen?'مفتوح':'مغلق')+'</span></div><p class="muted">'+(s.category||'عام')+'</p><div class="admin-item-meta"><span>⭐ '+(s.rating||0)+'</span><span>🚚 '+fmt(s.deliveryFee||0)+'</span><span>💼 '+(s.commission||0)+'%</span></div><button class="btn light" onclick="editAdminStore(\''+s.id+'\')">تعديل المتجر</button></div>').join('')+'</div>':'<div class="card">لا توجد متاجر.</div>')}catch(e){alert(e.message)}}
-async function addAdminStore(){const name=prompt('اسم المتجر');if(!name)return;const category=prompt('التصنيف','عام')||'عام';try{await apiP('/stores',{method:'POST',body:JSON.stringify({name,category})});loadAdminStores()}catch(e){alert(e.message)}}
+function closeStoreModal(){document.querySelector('#store-create-modal')?.remove()}
+async function addAdminStore(){
+ closeStoreModal();
+ const wrap=document.createElement('div');
+ wrap.id='store-create-modal';
+ wrap.className='aether-modal-backdrop';
+ wrap.innerHTML='<div class="aether-modal" dir="rtl"><div class="aether-modal-head"><div><span>NEW MERCHANT</span><h2>إضافة متجر حقيقي</h2><p>إنشاء المتجر وحساب صاحبه في خطوة واحدة.</p></div><button class="aether-modal-close" onclick="closeStoreModal()">×</button></div>'+
+ '<form id="store-create-form" class="aether-modal-form">'+
+ '<div class="aether-form-section"><b>بيانات المتجر</b><div class="aether-form-grid">'+
+ '<label>اسم المتجر *<input name="name" required placeholder="مثال: مطعم البيت"></label>'+
+ '<label>التصنيف *<input name="category" required value="مطاعم" placeholder="مطاعم / بقالة / صيدلية"></label>'+
+ '<label>رسوم التوصيل<input name="deliveryFee" type="number" min="0" step="0.01" value="0"></label>'+
+ '<label>العمولة %<input name="commission" type="number" min="0" step="0.1" value=""></label>'+
+ '<label>خط العرض<input name="lat" type="number" step="any" placeholder="اختياري"></label>'+
+ '<label>خط الطول<input name="lng" type="number" step="any" placeholder="اختياري"></label>'+
+ '<label class="aether-form-wide">وصف المتجر<textarea name="description" rows="3" placeholder="وصف يظهر للعملاء"></textarea></label>'+
+ '</div></div>'+
+ '<div class="aether-form-section"><b>حساب صاحب المتجر</b><div class="aether-form-grid">'+
+ '<label>اسم صاحب المتجر *<input name="ownerName" required placeholder="الاسم بالكامل"></label>'+
+ '<label>رقم الهاتف<input name="phone" placeholder="01xxxxxxxxx"></label>'+
+ '<label>اسم المستخدم *<input name="username" required minlength="4" placeholder="merchant_name"></label>'+
+ '<label>كلمة المرور *<input name="password" type="password" required minlength="6" placeholder="6 أحرف على الأقل"></label>'+
+ '<label class="aether-form-wide">البريد الإلكتروني<input name="email" type="email" placeholder="اختياري"></label>'+
+ '</div></div>'+
+ '<label class="aether-check"><input name="isOpen" type="checkbox" checked> المتجر مفتوح ويستقبل الطلبات</label>'+
+ '<div class="aether-modal-actions"><button type="button" class="btn light" onclick="closeStoreModal()">إلغاء</button><button class="btn" type="submit">إنشاء المتجر والحساب</button></div>'+
+ '</form></div>';
+ document.body.appendChild(wrap);
+ const form=wrap.querySelector('#store-create-form');
+ const commissionInput=form.querySelector('[name="commission"]');
+ try{const settings=await apiP('/settings');commissionInput.value=settings.settings.defaultCommission??0}catch(_){commissionInput.value=0}
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=Object.fromEntries(new FormData(form).entries());
+  const payload={name:b.name,category:b.category,description:b.description,deliveryFee:Number(b.deliveryFee||0),commission:Number(b.commission||0),
+   lat:b.lat===''?null:Number(b.lat),lng:b.lng===''?null:Number(b.lng),isOpen:form.querySelector('[name="isOpen"]').checked,
+   ownerName:b.ownerName,phone:b.phone,email:b.email,username:b.username,password:b.password};
+  try{
+   const d=await apiP('/stores',{method:'POST',body:JSON.stringify(payload)});
+   closeStoreModal();loadAdminStores();
+   alert('تم إنشاء المتجر وحساب صاحبه بنجاح\\n\\nاسم المستخدم: '+d.owner.username+'\\nدور الحساب: صاحب متجر');
+  }catch(err){alert(err.message)}
+ });
+}
 async function editAdminStore(id){try{const d=await apiP('/stores/'+id),s=d.store;const name=prompt('اسم المتجر',s.name);if(name===null)return;const commission=prompt('العمولة %',s.commission);const deliveryFee=prompt('رسوم التوصيل',s.deliveryFee);const isOpen=confirm('هل المتجر مفتوح ويستقبل الطلبات؟');await apiP('/stores/'+id,{method:'PATCH',body:JSON.stringify({name,commission:Number(commission),deliveryFee:Number(deliveryFee),isOpen})});loadAdminStores()}catch(e){alert(e.message)}}
 async function loadAdminCoupons(){activeView='adminCoupons';try{const d=await apiP('/coupons'),rows=d.coupons||[];document.querySelector('#orders').innerHTML='<div class="admin-list-head"><div><h2>🎟️ العروض والكوبونات</h2><p class="muted">إنشاء كوبونات الخصم ومراجعة حالتها.</p></div><button class="btn" onclick="addAdminCoupon()">+ إضافة كوبون</button></div>'+(rows.length?'<div class="admin-grid">'+rows.map(c=>'<div class="admin-item-card"><div class="row"><strong>'+c.code+'</strong><span class="status '+(c.active?'':'danger')+'">'+(c.active?'فعال':'متوقف')+'</span></div><p>الخصم: <b>'+c.value+(c.type==='percent'?'%':' جنيه')+'</b></p><p class="muted">الحد الأدنى: '+fmt(c.minOrder||0)+'</p><small>الانتهاء: '+(c.expiresAt||'بدون موعد')+'</small></div>').join('')+'</div>':'<div class="card">لا توجد كوبونات.</div>')}catch(e){alert(e.message)}}
 async function addAdminCoupon(){const code=prompt('كود الكوبون');if(!code)return;const type=confirm('موافق = نسبة مئوية / إلغاء = مبلغ ثابت')?'percent':'fixed';const value=prompt('قيمة الخصم');if(!value)return;try{await apiP('/coupons',{method:'POST',body:JSON.stringify({code,type,value:Number(value)})});loadAdminCoupons()}catch(e){alert(e.message)}}
