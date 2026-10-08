@@ -692,3 +692,43 @@
 .aether-admin #orders .order-current strong{
  color:#8fa8ff!important;
 }
+
+/* Admin stores + coupons: same AetherOps command-center cards */
+.aether-admin #orders .admin-list-head{
+ display:flex;align-items:center;justify-content:space-between;gap:16px;
+ margin-bottom:16px;padding:18px 20px;background:linear-gradient(145deg,#0e141e,#0b1018);
+ border:1px solid #1d2738;border-radius:14px;
+}
+.aether-admin #orders .admin-list-head h2{margin:0;color:#f4f7ff;font-size:18px}
+.aether-admin #orders .admin-list-head .muted{margin:5px 0 0;color:#687890}
+.aether-admin #orders .admin-grid{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+}
+.aether-admin #orders .admin-item-card{
+ background:linear-gradient(145deg,#101823,#0c121b)!important;
+ border:1px solid #202c3e!important;border-radius:15px!important;
+ padding:18px!important;color:#e8eef7!important;
+ box-shadow:0 12px 30px #0004!important;
+ position:relative;overflow:hidden;
+}
+.aether-admin #orders .admin-item-card:before{
+ content:'';position:absolute;top:0;right:0;left:0;height:2px;
+ background:linear-gradient(90deg,#7c5cff,#2e7cff,#35d6ff);opacity:.75;
+}
+.aether-admin #orders .admin-item-card .row{margin-bottom:12px}
+.aether-admin #orders .admin-item-card strong{color:#f4f7ff!important;font-size:15px}
+.aether-admin #orders .admin-item-card p{color:#9aa8bb!important}
+.aether-admin #orders .admin-item-meta{
+ display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:16px 0;
+}
+.aether-admin #orders .admin-item-meta span{
+ background:#151e2c;border:1px solid #263349;border-radius:9px;
+ padding:9px 5px;text-align:center;color:#9daac0;font-size:10px;
+}
+.aether-admin #orders .admin-item-card .btn.light{
+ background:#151e2c!important;color:#b8c5ff!important;border:1px solid #303e57!important;
+ width:100%;
+}
+.aether-admin #orders .admin-item-card .btn.light:hover{background:#1b2638!important;border-color:#7c5cff66!important}
+@media(max-width:900px){.aether-admin #orders .admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.aether-admin #orders .admin-list-head{align-items:flex-start;flex-direction:column}.aether-admin #orders .admin-grid{grid-template-columns:1fr}}
