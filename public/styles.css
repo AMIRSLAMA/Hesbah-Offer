@@ -662,3 +662,33 @@
 .aether-admin #orders .merchant-product-card p,.aether-admin #orders .merchant-product-card small{color:#8391a7}
 .aether-admin #orders .admin-section,.aether-admin #orders .settings-card{background:#0e141e;color:#e8eef7;border-color:#202c3e}
 .aether-admin #orders .nav button,.aether-admin #orders button:not(.btn){color:#dce5f3}
+
+/* Order workflow visibility inside AetherOps admin */
+.aether-admin #orders .order-stages{
+ background:#0a1019!important;
+ border-color:#243148!important;
+}
+.aether-admin #orders .order-stages span{
+ background:#151d2b!important;
+ color:#8391a7!important;
+ border-color:#29364a!important;
+}
+.aether-admin #orders .order-stages span.done{
+ background:#10271f!important;
+ color:#52d6a0!important;
+ border-color:#195440!important;
+}
+.aether-admin #orders .order-stages span.current{
+ background:linear-gradient(135deg,#7c5cff,#2e7cff)!important;
+ color:#fff!important;
+ border-color:#8b7cff!important;
+ box-shadow:0 5px 18px #7c5cff35!important;
+}
+.aether-admin #orders .order-current{
+ background:#111a27!important;
+ border-color:#29364a!important;
+ color:#dce5f3!important;
+}
+.aether-admin #orders .order-current strong{
+ color:#8fa8ff!important;
+}
