@@ -123,6 +123,15 @@ function exportDriverApplications(){
 }
 async function loadDrivers(){activeView='drivers';try{const d=await apiP('/drivers');document.querySelector('#orders').innerHTML=d.drivers.map(x=>`<div class="card"><h3>${x.name}</h3><p>⭐ ${x.rating} · ${x.deliveries||0} توصيل</p><p>الحالة: <span class="status">${x.status}</span></p><p>GPS: ${x.lat??'-'}, ${x.lng??'-'}</p></div>`).join('')}catch(e){alert(e.message)}}
 async function loadFinance(){activeView='finance';try{const d=await apiP('/finance');const role=currentRole();const extra=role==='admin'?`<div class="card"><h3>عمولة Hesbah</h3><strong>${fmt(d.summary.commission)}</strong></div>`:role==='driver'?`<div class="card"><h3>مستحقات التوصيل</h3><strong>${fmt(d.summary.earnings)}</strong></div>`:`<div class="card"><h3>صافي المستحق</h3><strong>${fmt(d.summary.merchantNet)}</strong></div>`;document.querySelector('#orders').innerHTML=`<div class="grid"><div class="card"><h3>صافي المبيعات</h3><strong>${fmt(d.summary.subtotal)}</strong></div><div class="card"><h3>التوصيل</h3><strong>${fmt(d.summary.delivery)}</strong></div>${extra}</div>`}catch(e){alert(e.message)}}
+function renderRoleLogin(expected){
+  const label=expected==='merchant'?'التاجر':expected==='admin'?'مدير النظام':'مستخدم';
+  const icon=expected==='merchant'?'🏪':'🔐';
+  document.body.innerHTML='<main class="driver-login-page"><section class="driver-login-card"><div class="driver-login-brand">HESBAH <span>'+expected.toUpperCase()+'</span></div><div class="driver-login-bike">'+icon+'</div><h1>تسجيل دخول '+label+'</h1><p>أدخل بيانات الحساب للوصول إلى لوحة التحكم.</p><form id="roleLoginForm"><input id="roleLoginUser" class="input" placeholder="اسم المستخدم" autocomplete="username" required><input id="roleLoginPass" class="input" type="password" placeholder="كلمة المرور" autocomplete="current-password" required><button class="btn" type="submit">دخول إلى لوحة التحكم</button></form><div id="roleLoginError" class="driver-login-error"></div></section></main>';
+  document.querySelector('#roleLoginForm').addEventListener('submit',async e=>{
+    e.preventDefault();const err=document.querySelector('#roleLoginError');err.textContent='جاري تسجيل الدخول...';
+    try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.querySelector('#roleLoginUser').value.trim(),password:document.querySelector('#roleLoginPass').value})});const d=await r.json();if(!r.ok)throw new Error(d.message||'بيانات الدخول غير صحيحة');if(d.user?.role!==expected)throw new Error('هذا الحساب ليس حساب '+label+'.');localStorage.hesbahToken=d.token;localStorage.hesbahUser=JSON.stringify(d.user);location.reload()}catch(e){err.textContent=e.message}
+  });
+}
 function renderDriverLogin(){
   document.body.innerHTML=`
   <main class="driver-login-page">
@@ -154,6 +163,8 @@ function renderDriverLogin(){
   });
 }
 const path=location.pathname;
-if(path.endsWith('/driver.html')&&!token())renderDriverLogin();
+const expectedPageRole=pageRole();
+if(expectedPageRole&&!token()&&expectedPageRole!=='driver')renderRoleLogin(expectedPageRole);
+else if(path.endsWith('/driver.html')&&!token())renderDriverLogin();
 else if(path.endsWith('/admin.html'))loadDashboard();else loadOrders();
 setInterval(()=>{if(token()&&document.querySelector('#orders')&&activeView==='orders')loadOrders()},5000);
