@@ -12,7 +12,6 @@ fs.mkdirSync(privateDocsDir,{recursive:true});
 const profileDir=path.join(__dirname,'..','data','private','customer-profiles');fs.mkdirSync(profileDir,{recursive:true});
 const productImagesDir=path.join(__dirname,'..','data','product-images');fs.mkdirSync(productImagesDir,{recursive:true});
 const storeImagesDir=path.join(__dirname,'..','data','store-images');fs.mkdirSync(storeImagesDir,{recursive:true});
-const storeImagesDir=path.join(__dirname,'..','data','store-images');fs.mkdirSync(storeImagesDir,{recursive:true});
 const productImageUpload=multer({
  storage:multer.diskStorage({
   destination:(_,__,cb)=>cb(null,productImagesDir),
