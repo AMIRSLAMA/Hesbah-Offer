@@ -73,3 +73,54 @@
 .driver-login-card .btn{width:100%;min-height:50px;border-radius:14px;background:linear-gradient(135deg,#102b40,#0b9484);font-weight:900}
 .driver-login-error{min-height:20px;margin-top:13px;color:#b3262d;font-size:12px;font-weight:800}
 \n/* Merchant dashboard premium */\n.merchant-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 16px}.merchant-stat{background:#fff;border:1px solid #e9edf2;border-radius:18px;padding:17px 18px;position:relative;overflow:hidden;box-shadow:0 8px 24px #11100008}.merchant-stat:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--brand)}.merchant-stat span{font-size:22px;float:right;margin-left:10px}.merchant-stat small{display:block;color:var(--muted);font-weight:800;font-size:12px}.merchant-stat strong{display:block;font-size:28px;margin-top:5px}.merchant-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.merchant-filters button{background:#fff;border:1px solid #e2e6eb;color:#4b5563;border-radius:999px;padding:9px 14px;font-weight:900}.merchant-filters button:hover,.merchant-filters button.active{background:#111;color:#fff;border-color:#111}.merchant-page .order-section{box-shadow:0 10px 30px #11100008}.merchant-page .role-orders .card{box-shadow:0 7px 22px #11100008}.merchant-page .role-orders .card .btn{margin-top:5px}.merchant-page .role-orders .card .btn.alt{background:#111}.merchant-page .role-orders .card .btn.light{background:#fff;color:var(--ink)}@media(max-width:800px){.merchant-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.merchant-stats{grid-template-columns:1fr 1fr}.merchant-stat{padding:14px}.merchant-stat strong{font-size:23px}.merchant-filters{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.merchant-filters button{white-space:nowrap}}\n.merchant-editor{max-width:900px}.merchant-editor h2{margin-top:0}.merchant-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0}.merchant-form-grid label{font-size:13px;font-weight:900}.merchant-form-grid .input{margin-top:7px}.merchant-switch{display:flex;align-items:center;gap:9px;margin:15px 0 20px;font-weight:900}.merchant-switch input{width:18px;height:18px}.merchant-products-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}.merchant-products-head h2{margin:0 0 5px}.merchant-products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.merchant-product-card{background:#fff;border:1px solid #e9edf2;border-radius:18px;padding:17px;box-shadow:0 7px 22px #11100008}.merchant-product-card .row strong{font-size:17px}.merchant-product-price{font-size:23px;font-weight:1000;color:var(--brand);margin:13px 0 5px}.merchant-product-card small{color:var(--muted)}@media(max-width:800px){.merchant-products-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.merchant-form-grid{grid-template-columns:1fr}.merchant-products-grid{grid-template-columns:1fr}.merchant-products-head{align-items:flex-start;flex-direction:column}}
+/* Merchant UI final polish */
+.merchant-page{background:#f5f6f8}
+.merchant-page .top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);box-shadow:0 1px 0 #e5e7eb}
+.merchant-page .role-top{padding:14px 24px}
+.merchant-page .role-top .logo{font-size:22px;font-weight:1000;letter-spacing:.2px}
+.merchant-page .role-top .logo span{font-size:11px;background:#fff1e6;color:var(--brand);padding:4px 8px;border-radius:999px;margin-right:6px}
+.merchant-page .container{max-width:1250px}
+.merchant-page .role-hero{min-height:205px;padding:32px 36px;margin-top:24px;box-shadow:0 16px 38px #11100012}
+.merchant-page .role-hero h1{font-size:31px;line-height:1.35}
+.merchant-page .role-icon{width:110px;height:110px;display:grid;place-items:center;border-radius:28px;background:#ffffff18;border:1px solid #ffffff25;font-size:55px}
+.merchant-page .merchant-nav{margin:18px 0 16px;padding:6px;gap:5px;box-shadow:0 5px 18px #11100008}
+.merchant-page .merchant-nav button{border:0;cursor:pointer;transition:.2s;padding:12px 17px}
+.merchant-page .merchant-nav button.active{background:#111827;box-shadow:0 5px 14px #11182725}
+.merchant-page .merchant-stats{gap:12px}
+.merchant-page .merchant-stat{border-radius:17px;box-shadow:0 5px 18px #11100009}
+.merchant-page .merchant-filters{padding:3px;background:#fff;border:1px solid #e9edf2;border-radius:14px;width:max-content;max-width:100%;box-shadow:0 4px 14px #11100006}
+.merchant-page .merchant-filters button{border:0;background:transparent;transition:.2s}
+.merchant-page .merchant-filters button.active{background:#111827}
+.merchant-page .order-section{border:0;border-radius:20px;padding:24px;box-shadow:0 8px 28px #1110000b}
+.merchant-page .role-orders{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.merchant-page .role-orders .card{border:1px solid #e8ebef;border-right:4px solid var(--brand);border-radius:18px;padding:18px;transition:transform .18s,box-shadow .18s}
+.merchant-page .role-orders .card:hover{transform:translateY(-2px);box-shadow:0 12px 28px #11100012}
+.merchant-page .merchant-editor{border:0;border-radius:20px;padding:26px;box-shadow:0 8px 28px #1110000b}
+.merchant-page .merchant-editor h2{font-size:24px}
+.merchant-page .merchant-form-grid label{color:#374151}
+.merchant-page .merchant-form-grid .input{border:1px solid #dfe4ea;border-radius:12px;background:#fafbfc;padding:12px 13px;outline:none;transition:.2s}
+.merchant-page .merchant-form-grid .input:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px #ff6b0018}
+.merchant-page .merchant-products-head{background:#fff;border:1px solid #e9edf2;border-radius:18px;padding:17px 20px;box-shadow:0 5px 18px #11100007}
+.merchant-page .merchant-products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.merchant-page .merchant-product-card{border:1px solid #e7ebef;border-radius:18px;box-shadow:0 7px 22px #11100008;transition:.2s}
+.merchant-page .merchant-product-card:hover{transform:translateY(-2px);box-shadow:0 13px 30px #11100012}
+.merchant-page .merchant-product-card .status{padding:5px 9px;border-radius:999px;background:#eaf8f1;color:#13865a;font-size:11px}
+.merchant-page .merchant-product-card .status.danger{background:#fff0f0;color:#c9363b}
+.merchant-page .merchant-product-card .btn{border-radius:10px}
+.merchant-page .merchant-switch{background:#f8fafb;border:1px solid #e7ebef;border-radius:13px;padding:12px 14px}
+@media(max-width:900px){
+ .merchant-page .role-orders{grid-template-columns:1fr}
+ .merchant-page .merchant-products-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ .merchant-page .role-top{padding:12px 15px}
+ .merchant-page .role-hero{padding:24px 20px;margin-top:15px;min-height:auto}
+ .merchant-page .role-hero h1{font-size:24px}
+ .merchant-page .role-icon{width:75px;height:75px;font-size:38px;border-radius:20px}
+ .merchant-page .merchant-nav{overflow:auto;white-space:nowrap}
+ .merchant-page .merchant-nav button{flex:0 0 auto}
+ .merchant-page .merchant-stats{grid-template-columns:1fr 1fr}
+ .merchant-page .merchant-filters{width:100%;overflow:auto;white-space:nowrap}
+ .merchant-page .order-section{padding:16px}
+ .merchant-page .merchant-products-grid{grid-template-columns:1fr}
+}
