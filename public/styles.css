@@ -629,3 +629,36 @@
 .aether-flow-step.has-orders .aether-flow-node{border-color:#7c5cffaa;box-shadow:0 0 0 6px #0c121d,0 0 28px #7c5cff22}
 .aether-flow-step.has-orders .aether-flow-copy strong{color:#fff}
 @media(max-width:760px){.aether-workflow{justify-content:flex-start}.aether-flow-step{min-width:100px}}
+
+/* AetherOps dark theme for every admin action view */
+.aether-admin #orders{color:#e8eef7}
+.aether-admin #orders .card,
+.aether-admin #orders .admin-card,
+.aether-admin #orders .table-wrap,
+.aether-admin #orders .list-card,
+.aether-admin #orders .form-card,
+.aether-admin #orders .admin-list,
+.aether-admin #orders>div:not(.command-dashboard){background:#0e141e;color:#e8eef7;border-color:#202c3e}
+.aether-admin #orders h1,.aether-admin #orders h2,.aether-admin #orders h3,.aether-admin #orders h4,.aether-admin #orders strong{color:#f4f7ff}
+.aether-admin #orders p,.aether-admin #orders small,.aether-admin #orders .muted,.aether-admin #orders label{color:#8391a7}
+.aether-admin #orders input,.aether-admin #orders select,.aether-admin #orders textarea{
+ background:#0a1019!important;color:#edf3ff!important;border:1px solid #29364a!important;
+}
+.aether-admin #orders input::placeholder,.aether-admin #orders textarea::placeholder{color:#56657b}
+.aether-admin #orders .row,.aether-admin #orders .admin-list-head,.aether-admin #orders .filters{color:#dce5f3}
+.aether-admin #orders .btn{color:#fff}
+.aether-admin #orders .btn.light{background:#151e2c!important;color:#b9c6ff!important;border-color:#30405a!important}
+.aether-admin #orders table{color:#dce5f3;background:#0d131d}
+.aether-admin #orders th{background:#151d2b!important;color:#8190a6!important;border-color:#243148!important}
+.aether-admin #orders td{background:#0d131d!important;color:#dce5f3!important;border-color:#1e293a!important}
+.aether-admin #orders tr:hover td{background:#111a27!important}
+.aether-admin #orders .status{background:#10271f;color:#42d69d;border-color:#194f3d}
+.aether-admin #orders .status.danger{background:#2b151a;color:#ff7784;border-color:#5c2630}
+.aether-admin #orders .status.pending{background:#30250d;color:#fbbf24;border-color:#5b4614}
+.aether-admin #orders .admin-empty,.aether-admin #orders .empty{background:#0e141e;color:#71809a;border-color:#202c3e}
+.aether-admin #orders .command-panel{background:linear-gradient(145deg,#0e141e,#0b1018)!important}
+.aether-admin #orders .admin-products-grid,.aether-admin #orders .merchant-products-grid{background:transparent}
+.aether-admin #orders .merchant-product-card{background:#0e141e;color:#e8eef7;border-color:#202c3e}
+.aether-admin #orders .merchant-product-card p,.aether-admin #orders .merchant-product-card small{color:#8391a7}
+.aether-admin #orders .admin-section,.aether-admin #orders .settings-card{background:#0e141e;color:#e8eef7;border-color:#202c3e}
+.aether-admin #orders .nav button,.aether-admin #orders button:not(.btn){color:#dce5f3}
