@@ -732,3 +732,28 @@
 .aether-admin #orders .admin-item-card .btn.light:hover{background:#1b2638!important;border-color:#7c5cff66!important}
 @media(max-width:900px){.aether-admin #orders .admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.aether-admin #orders .admin-list-head{align-items:flex-start;flex-direction:column}.aether-admin #orders .admin-grid{grid-template-columns:1fr}}
+
+
+/* AetherOps real-store creation modal */
+.aether-modal-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(2,7,14,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:24px}
+.aether-modal{width:min(860px,100%);max-height:92vh;overflow:auto;background:linear-gradient(145deg,#101823,#0b111a);border:1px solid #29364a;border-radius:20px;box-shadow:0 30px 90px #000b;color:#e8eef7}
+.aether-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:24px 26px 18px;border-bottom:1px solid #202c3e}
+.aether-modal-head span{font-size:10px;letter-spacing:2px;color:#7c8cff;font-weight:900}
+.aether-modal-head h2{margin:7px 0 5px;color:#f7f9ff;font-size:22px}
+.aether-modal-head p{margin:0;color:#718198;font-size:12px}
+.aether-modal-close{width:38px;height:38px;border:1px solid #29364a;border-radius:10px;background:#151e2b;color:#aebbd0;font-size:24px;cursor:pointer}
+.aether-modal-close:hover{background:#1d2939;color:#fff}
+.aether-modal-form{padding:22px 26px 26px}
+.aether-form-section{padding:18px 0;border-bottom:1px solid #1d2738}
+.aether-form-section>b{display:block;color:#cdd7e7;margin-bottom:14px;font-size:13px}
+.aether-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.aether-form-grid label{display:flex;flex-direction:column;gap:7px;color:#8290a6;font-size:11px;font-weight:800}
+.aether-form-grid input,.aether-form-grid textarea{width:100%;box-sizing:border-box;background:#0a1019!important;border:1px solid #273449!important;border-radius:10px;padding:11px 12px;color:#eef3fb!important;outline:none;font:inherit}
+.aether-form-grid input:focus,.aether-form-grid textarea:focus{border-color:#7065ff!important;box-shadow:0 0 0 3px #7065ff18}
+.aether-form-grid textarea{resize:vertical}
+.aether-form-wide{grid-column:1/-1}
+.aether-check{display:flex;align-items:center;gap:9px;margin:18px 0;color:#aab6c8;font-size:12px;font-weight:800}
+.aether-check input{accent-color:#7c5cff}
+.aether-modal-actions{display:flex;justify-content:flex-start;gap:10px;margin-top:22px}
+.aether-modal-actions .btn{min-width:170px}
+@media(max-width:650px){.aether-modal-backdrop{padding:10px}.aether-modal-head,.aether-modal-form{padding-left:16px;padding-right:16px}.aether-form-grid{grid-template-columns:1fr}.aether-form-wide{grid-column:auto}.aether-modal-actions{flex-direction:column}.aether-modal-actions .btn{width:100%}}
