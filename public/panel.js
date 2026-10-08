@@ -81,7 +81,45 @@ async function setStatus(id,status){
 async function assignDriver(id){try{const d=await apiP('/drivers');const free=d.drivers.filter(x=>x.status==='available');if(!free.length)return alert('لا يوجد مندوب متاح حالياً');const names=free.map((x,i)=>`${i+1}) ${x.name} — ${x.status} — ⭐${x.rating}`).join('\n');const pick=Number(prompt('اختر رقم المندوب:\n'+names));if(!pick||!free[pick-1])return;await apiP('/orders/'+id+'/assign-driver',{method:'POST',body:JSON.stringify({driverId:free[pick-1].id})});loadOrders()}catch(e){alert(e.message)}}
 async function loadDashboard(){
  activeView='dashboard';
- try{const d=await apiP('/dashboard');document.querySelector('#kpis').innerHTML=Object.entries({الطلبات:d.stats.orders,'قيد التنفيذ':d.stats.pending,'المبيعات':fmt(d.stats.revenue),'عمولات Hesbah':fmt(d.stats.commissions),'صافي التجار':fmt(d.stats.merchantNet),'المتاجر':d.stats.stores,'المندوبين':d.stats.drivers,'العملاء':d.stats.customers}).map(([k,v])=>`<div class="card kpi"><span class="muted">${k}</span><strong>${v}</strong></div>`).join('');document.querySelector('#orders').innerHTML='<div class="admin-welcome"><div><span class="admin-mini-badge">HESBAH OFFER</span><h2>مركز التحكم جاهز</h2><p class="muted">تابع تشغيل المنصة من الطلب حتى التسوية المالية، واختر القسم المطلوب من القائمة.</p></div><div class="admin-quick"><button class="btn" onclick="loadOrders()">📦 الطلبات</button><button class="btn light" onclick="loadAdminStores()">🏪 المتاجر</button><button class="btn light" onclick="loadAdminCoupons()">🎟️ الكوبونات</button></div></div>'}catch(e){alert(e.message)}
+ try{
+  const [dash,ordersData]=await Promise.all([apiP('/dashboard'),apiP('/orders?_dashboard='+Date.now())]);
+  const st=dash.stats||{},orders=ordersData.orders||[];
+  const money=fmt;
+  const labels={pending:'جديد',accepted:'مقبول',preparing:'تجهيز',ready_for_pickup:'جاهز',driver_assigned:'مندوب',picked_up:'استلام',out_for_delivery:'في الطريق',delivered:'مكتمل',cancelled:'ملغي'};
+  const colors={pending:'#f59e0b',accepted:'#6366f1',preparing:'#8b5cf6',ready_for_pickup:'#06b6d4',driver_assigned:'#2563eb',picked_up:'#0ea5a5',out_for_delivery:'#7c3aed',delivered:'#10b981',cancelled:'#ef4444'};
+  const active=['pending','accepted','preparing','ready_for_pickup','driver_assigned','picked_up','out_for_delivery'];
+  const statusCounts={};Object.keys(labels).forEach(k=>statusCounts[k]=orders.filter(o=>o.status===k).length);
+  const max=Math.max(1,...Object.values(statusCounts));
+  const recent=orders.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,8);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  document.querySelector('#kpis').innerHTML=[
+   ['إجمالي الطلبات',st.orders||0,'📦','admin-kpi-purple'],
+   ['قيد التشغيل',st.pending||0,'⚡','admin-kpi-blue'],
+   ['المبيعات',money(st.revenue||0),'💰','admin-kpi-green'],
+   ['عمولات Hesbah',money(st.commissions||0),'◈','admin-kpi-violet'],
+   ['صافي التجار',money(st.merchantNet||0),'🏪','admin-kpi-cyan'],
+   ['المتاجر',st.stores||0,'🏬','admin-kpi-orange'],
+   ['المندوبين',st.drivers||0,'🚗','admin-kpi-indigo'],
+   ['العملاء',st.customers||0,'👥','admin-kpi-pink']
+  ].map(x=>'<div class="admin-command-kpi '+x[3]+'"><span class="admin-kpi-icon">'+x[2]+'</span><span class="muted">'+x[0]+'</span><strong>'+x[1]+'</strong><small>منصة Hesbah Offer</small></div>').join('');
+  document.querySelector('#orders').innerHTML=
+   '<div class="command-dashboard">'+
+    '<div class="command-head"><div><span class="command-eyebrow">LIVE OPERATIONS</span><h2>مركز التشغيل</h2><p class="muted">نظرة لحظية على الطلبات وحركة المنصة.</p></div><div class="command-head-actions"><span class="admin-live"><i></i> النظام يعمل</span><button class="btn" onclick="loadOrders()">عرض كل الطلبات</button></div></div>'+
+    '<div class="command-grid">'+
+      '<div class="command-panel command-pipeline"><div class="panel-title"><div><b>سير الطلبات</b><small>توزيع الطلبات حسب الحالة</small></div><span>الآن</span></div>'+
+      '<div class="pipeline-list">'+Object.keys(labels).map(k=>'<div class="pipeline-row"><span class="pipeline-dot" style="background:'+colors[k]+'"></span><b>'+labels[k]+'</b><div class="pipeline-track"><i style="width:'+Math.round(statusCounts[k]/max*100)+'%;background:'+colors[k]+'"></i></div><strong>'+statusCounts[k]+'</strong></div>').join('')+'</div></div>'+
+      '<div class="command-panel command-health"><div class="panel-title"><div><b>صحة المنصة</b><small>مؤشرات التشغيل الأساسية</small></div><span class="health-badge">مستقر</span></div>'+
+       '<div class="health-ring"><div><strong>'+Math.max(0,orders.length-statusCounts.cancelled)+'</strong><small>طلب نشط/مكتمل</small></div></div>'+
+       '<div class="health-stats"><div><span>طلبات نشطة</span><b>'+active.reduce((a,k)=>a+statusCounts[k],0)+'</b></div><div><span>مكتملة</span><b>'+statusCounts.delivered+'</b></div><div><span>ملغاة</span><b>'+statusCounts.cancelled+'</b></div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="command-panel command-recent"><div class="panel-title"><div><b>آخر الطلبات</b><small>آخر حركة على المنصة</small></div><button class="btn light" onclick="loadOrders()">فتح الطلبات</button></div>'+
+      '<div class="command-order-table"><div class="command-order-head"><span>الطلب</span><span>الحالة</span><span>الإجمالي</span><span>آخر تحديث</span></div>'+
+      (recent.length?recent.map(o=>'<div class="command-order-row"><span><b>#'+esc(o.number||o.id)+'</b><small>'+esc(o.customerName||'عميل')+'</small></span><span class="command-status" style="--status:'+colors[o.status]+'">'+(labels[o.status]||esc(o.status))+'</span><b>'+money(o.total||0)+'</b><small>'+new Date(o.updatedAt||o.createdAt||Date.now()).toLocaleString('ar-EG')+'</small></div>').join(''):'<div class="command-empty">لا توجد طلبات حتى الآن.</div>')+
+      '</div></div>'+
+    '<div class="command-quick-grid"><button onclick="loadDrivers()">🚗 <b>المندوبين</b><small>إدارة الأسطول والتوافر</small></button><button onclick="loadAdminStores()">🏪 <b>المتاجر</b><small>حالة المتاجر والعمولات</small></button><button onclick="loadFinance()">💰 <b>المالية</b><small>المبيعات والتسويات</small></button><button onclick="loadAdminCoupons()">🎟️ <b>العروض</b><small>الكوبونات والحملات</small></button></div>'+
+   '</div>';
+ }catch(e){alert(e.message)}
 }
 async function viewDriverDoc(id,type){
  try{
