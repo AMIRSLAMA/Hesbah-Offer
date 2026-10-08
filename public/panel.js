@@ -166,6 +166,18 @@ function renderDriverLogin(){
     }catch(e){err.textContent=e.message}
   });
 }
+function initAdminNavigation(){
+ if(!location.pathname.endsWith('/admin.html'))return;
+ const actions={
+  dashboard:()=>loadDashboard(),orders:()=>loadOrders(),drivers:()=>loadDrivers(),
+  applications:()=>loadDriverApplications(),finance:()=>loadFinance(),stores:()=>loadAdminStores(),
+  customers:()=>loadCustomers(),payments:()=>loadPaymentSettings(),deletes:()=>loadDeleteRequests(),coupons:()=>loadAdminCoupons()
+ };
+ document.querySelectorAll('[data-admin-action]').forEach(btn=>{
+  btn.addEventListener('click',e=>{e.preventDefault();const fn=actions[btn.dataset.adminAction];if(fn)fn();});
+ });
+}
+initAdminNavigation();
 const path=location.pathname;
 const expectedPageRole=pageRole();
 if(expectedPageRole&&!token()&&expectedPageRole!=='driver')renderRoleLogin(expectedPageRole);
