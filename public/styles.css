@@ -124,3 +124,30 @@
  .merchant-page .order-section{padding:16px}
  .merchant-page .merchant-products-grid{grid-template-columns:1fr}
 }
+
+/* Merchant layout aligned with the same role-panel design as Driver */
+.merchant-page{background:var(--bg)}
+.merchant-page .top{position:static;background:#fff;backdrop-filter:none;box-shadow:none}
+.merchant-page .role-top{padding:16px 22px}
+.merchant-page .role-top .logo{color:#ff6b00}
+.merchant-page .role-top small{color:var(--muted);font-weight:800}
+.merchant-page .role-top .logo span{color:#ff9d2e;background:none;padding:0}
+.merchant-page .role-hero{margin-bottom:22px;box-shadow:none}
+.merchant-page .merchant-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+.merchant-page .merchant-nav button{background:#fff;border:1px solid #dfe5e9;color:#334155;border-radius:12px;padding:10px 15px;font-weight:900}
+.merchant-page .merchant-nav button.active,.merchant-page .merchant-nav button:hover{background:#ff6b00;color:#fff;border-color:#ff6b00}
+.merchant-page .merchant-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;width:auto;max-width:none}
+.merchant-page .merchant-filters button{background:#fff;border:1px solid #dfe5e9;color:#334155;border-radius:12px;padding:10px 15px;font-weight:900}
+.merchant-page .merchant-filters button.active,.merchant-page .merchant-filters button:hover{background:#ff6b00;color:#fff;border-color:#ff6b00}
+.merchant-page .order-section{background:#fff;border:1px solid #e9edf2;border-radius:22px;padding:22px;box-shadow:none}
+.merchant-page .role-orders{grid-template-columns:1fr;gap:16px}
+.merchant-page .role-orders .card{border-right:5px solid #ff6b00;box-shadow:none;border-radius:16px}
+.merchant-page .merchant-stat{box-shadow:none}
+.merchant-page .merchant-editor{box-shadow:none;border:1px solid #e9edf2}
+.merchant-page .merchant-products-head{box-shadow:none}
+.merchant-page .merchant-product-card{box-shadow:none}
+@media(max-width:650px){
+ .merchant-page .merchant-nav,.merchant-page .merchant-filters{position:static;overflow:auto;flex-wrap:nowrap}
+ .merchant-page .merchant-nav button,.merchant-page .merchant-filters button{white-space:nowrap;flex:0 0 auto}
+ .merchant-page .order-section{padding:15px}
+}
