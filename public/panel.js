@@ -180,7 +180,11 @@ function initAdminNavigation(){
 initAdminNavigation();
 const path=location.pathname;
 const expectedPageRole=pageRole();
-if(expectedPageRole&&!token()&&expectedPageRole!=='driver')renderRoleLogin(expectedPageRole);
-else if(path.endsWith('/driver.html')&&!token())renderDriverLogin();
+const savedRole=currentRole();
+if(expectedPageRole&&expectedPageRole!=='driver'&&(!token()||savedRole!==expectedPageRole)){
+  localStorage.removeItem('hesbahToken');
+  localStorage.removeItem('hesbahUser');
+  renderRoleLogin(expectedPageRole);
+}else if(path.endsWith('/driver.html')&&!token())renderDriverLogin();
 else if(path.endsWith('/admin.html'))loadDashboard();else loadOrders();
 setInterval(()=>{if(token()&&document.querySelector('#orders')&&activeView==='orders')loadOrders()},5000);
