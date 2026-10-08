@@ -161,6 +161,7 @@ function renderDriverLogin(){
     }catch(e){err.textContent=e.message}
   });
 }
+if(new URLSearchParams(location.search).has('logout')){localStorage.removeItem('hesbahToken');localStorage.removeItem('hesbahUser');localStorage.removeItem('hesbahDriverAvailable');history.replaceState({},'',location.pathname)}
 const path=location.pathname;
 const expectedPageRole=pageRole();
 if(expectedPageRole&&!token()&&expectedPageRole!=='driver')renderRoleLogin(expectedPageRole);
