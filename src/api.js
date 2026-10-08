@@ -98,7 +98,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
  try{
   const db=read(),{storeId,items,address,paymentMethod='cash',coupon,lat,lng}=req.body||{};
   if(!storeId||!Array.isArray(items)||!items.length||!address)return res.status(400).json({ok:false,message:'اختر المنتجات والعنوان'});
-  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});const methods=db.settings.paymentMethods||[];if(!methods.some(x=>x.id===paymentMethod&&x.enabled))return res.status(400).json({ok:false,message:'طريقة الدفع غير متاحة حالياً'});
+  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});const methods=db.settings.paymentMethods||[];const enabledMethods=methods.filter(x=>x.enabled);if(!enabledMethods.length&&paymentMethod==='cash'){}else if(!enabledMethods.some(x=>x.id===paymentMethod))return res.status(400).json({ok:false,message:'طريقة الدفع غير متاحة حالياً'});
   let subtotal=0;
   const lines=items.map(i=>{
    const p=db.products.find(x=>x.id===i.productId&&x.storeId===storeId&&x.available);
@@ -194,7 +194,7 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  res.json({ok:true,summary,settlements:db.settlements.filter(x=>req.user.role==='admin'||(req.user.role==='merchant'&&x.ownerId===req.user.storeId)||(req.user.role==='driver'&&x.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
-router.get('/payment-methods',(req,res)=>res.json({ok:true,paymentMethods:(read().settings.paymentMethods||[]).filter(x=>x.enabled).map(({id,name,instructions})=>({id,name,instructions:instructions||''}))}));
+router.get('/payment-methods',(req,res)=>{const configured=(read().settings.paymentMethods||[]).filter(x=>x.enabled).map(({id,name,instructions})=>({id,name,instructions:instructions||''}));const paymentMethods=configured.length?configured:[{id:'cash',name:'الدفع عند الاستلام',instructions:'الدفع نقدًا عند استلام الطلب'}];res.json({ok:true,paymentMethods});});
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
