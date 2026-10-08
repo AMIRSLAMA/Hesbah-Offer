@@ -162,3 +162,28 @@
 .merchant-page .merchant-form-grid .input:focus{border-color:#ff6b00;box-shadow:0 0 0 3px #ff6b0018}
 .merchant-page .btn{background:#ff6b00}
 .merchant-page .btn:hover{background:#e85f00}
+
+/* Merchant palette exactly aligned with customer */
+.merchant-page .merchant-hero{
+  background:linear-gradient(135deg,#ff7a18 0%,#ff9d2e 48%,#ffe0b8 100%);
+}
+.merchant-page .merchant-hero p{color:#5b4633}
+.merchant-page .merchant-hero .role-badge{
+  background:#ffffff55;border-color:#ffffff80;color:#7a3b00;
+}
+.merchant-page .role-icon{
+  background:#ffffff55;border-color:#ffffff80;color:#ff7a18;
+}
+.merchant-page .role-top .logo{color:#ff6b00}
+.merchant-page .role-top .logo span{color:#ff9d2e}
+.merchant-page .merchant-nav button.active,
+.merchant-page .merchant-nav button:hover,
+.merchant-page .merchant-filters button.active,
+.merchant-page .merchant-filters button:hover{
+  background:#ff7a18;color:#fff;border-color:#ff7a18;
+}
+.merchant-page .merchant-stat:before{background:#ff7a18}
+.merchant-page .role-orders .card{border-right-color:#ff7a18}
+.merchant-page .merchant-product-price{color:#ff7a18}
+.merchant-page .btn{background:#ff7a18}
+.merchant-page .btn:hover{background:#e96d10}
