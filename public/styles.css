@@ -509,3 +509,93 @@
  .admin-page .health-ring{width:130px;height:130px}
  .admin-page .health-ring>div{width:100px;height:100px}
 }
+
+
+/* Command Center visual overhaul — dark cyber/logistics direction */
+.admin-page{
+ --cc-bg:#080b12;--cc-panel:#10151f;--cc-panel2:#141b27;--cc-line:#222b3a;
+ --cc-text:#f3f6fb;--cc-muted:#8491a5;--cc-purple:#8b5cf6;--cc-cyan:#22d3ee;
+ background:radial-gradient(circle at 85% 5%,#1d1740 0,transparent 28%),var(--cc-bg);
+ color:var(--cc-text);
+ min-height:100vh;
+}
+.admin-page .admin-top{
+ position:sticky;top:0;z-index:40;background:rgba(8,11,18,.88);
+ backdrop-filter:blur(18px);border-bottom:1px solid var(--cc-line);
+ box-shadow:0 10px 35px #0008;color:#fff;
+}
+.admin-page .admin-top .logo{color:#fff}.admin-page .admin-top .logo span{color:#a78bfa}
+.admin-page .admin-top small{color:#7f8da3}.admin-page .admin-top .btn{background:#fff;color:#10151f;border:0}
+.admin-page .admin-hero{
+ margin-top:20px;min-height:185px;padding:30px;border:1px solid #293247;
+ background:linear-gradient(135deg,#101722 0%,#151a31 50%,#21164a 100%);
+ box-shadow:0 22px 60px #0007;border-radius:22px;
+}
+.admin-page .admin-hero:after{background:#8b5cf622;left:-80px;top:-130px}
+.admin-page .admin-hero h1{color:#fff;font-size:30px}.admin-page .admin-hero p{color:#9eabc0}
+.admin-page .admin-badge{background:#8b5cf622;border-color:#8b5cf655;color:#c4b5fd}
+.admin-page .admin-hero-icon{background:#ffffff0b;border-color:#ffffff15;color:#a78bfa}
+
+.admin-page .admin-kpis{gap:10px;margin:16px 0}
+.admin-page .admin-command-kpi{
+ min-height:116px;padding:16px;border-radius:16px;
+ background:linear-gradient(145deg,#111722,#0e131c);
+ border:1px solid #202a39;box-shadow:0 12px 30px #0004;
+}
+.admin-page .admin-command-kpi:after{background:#8b5cf610}
+.admin-page .admin-command-kpi .admin-kpi-icon{border-radius:10px}
+.admin-page .admin-command-kpi .muted{color:#7f8da3}.admin-page .admin-command-kpi strong{color:#fff}
+.admin-page .admin-command-kpi small{color:#56657b}
+
+.admin-page .admin-layout{grid-template-columns:218px minmax(0,1fr);gap:14px}
+.admin-page .admin-sidebar{
+ top:82px;padding:10px;border-radius:18px;
+ background:#0d121a;border:1px solid #202a39;box-shadow:0 18px 45px #0006;
+}
+.admin-page .admin-side-title{color:#59677c;padding:9px;font-size:9px;letter-spacing:.7px;text-transform:uppercase}
+.admin-page .admin-sidebar .nav button{
+ color:#8794a8;border-radius:10px;padding:11px 12px;border-color:transparent;
+}
+.admin-page .admin-sidebar .nav button:hover,.admin-page .admin-sidebar .nav button.active{
+ background:linear-gradient(90deg,#8b5cf625,#22d3ee10);
+ border-color:#8b5cf655;color:#fff;box-shadow:none;
+}
+.admin-page .admin-sidebar .nav button:hover:before,.admin-page .admin-sidebar .nav button.active:before{
+ content:'';display:inline-block;width:3px;height:17px;border-radius:3px;background:#a78bfa;margin-left:9px;vertical-align:middle;
+}
+
+.admin-page .admin-content{
+ background:transparent;border:0;padding:0;box-shadow:none;
+}
+.admin-page .command-panel,.admin-page .admin-welcome,.admin-page .admin-content .card{
+ background:linear-gradient(145deg,#10151f,#0d121a);
+ border:1px solid #202a39;border-radius:18px;color:#e7edf6;
+ box-shadow:0 15px 38px #0005;
+}
+.admin-page .panel-title b,.admin-page .admin-list-head h2,.admin-page .admin-welcome h2{color:#fff}
+.admin-page .panel-title small,.admin-page .admin-welcome .muted{color:#718096}
+.admin-page .panel-title>span{background:#171e2a;color:#7f8da3}
+.admin-page .health-badge{background:#0c2a24!important;color:#34d399!important;border:1px solid #145b4b}
+.admin-page .pipeline-track{background:#1b2431}
+.admin-page .pipeline-row b{color:#aab5c6}.admin-page .pipeline-row strong{color:#fff}
+.admin-page .health-ring{background:conic-gradient(#8b5cf6 0 72%,#242a39 72% 100%)}
+.admin-page .health-ring>div{background:#10151f}.admin-page .health-ring strong{color:#fff}
+.admin-page .health-ring small,.admin-page .health-stats span{color:#718096}
+.admin-page .health-stats div{background:#141b25;border-color:#222c3b}.admin-page .health-stats b{color:#fff}
+
+.admin-page .command-order-table{border-color:#222c3b}
+.admin-page .command-order-head{background:#151c27;color:#68768b}
+.admin-page .command-order-row{border-color:#202a39;color:#dce3ed}
+.admin-page .command-order-row>span:first-child small,.admin-page .command-order-row>small{color:#69778b}
+.admin-page .command-quick-grid button{
+ background:#10151f;border-color:#222c3b;color:#fff;border-radius:15px;
+}
+.admin-page .command-quick-grid button:hover{border-color:#8b5cf655;background:#141b27;box-shadow:0 12px 30px #8b5cf614}
+.admin-page .admin-content .btn{background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff}
+.admin-page .admin-content .btn.light{background:#18202d;color:#b9a9ff;border:1px solid #303b4d}
+.admin-page .admin-live{background:#09251f;color:#34d399;border-color:#145b4b}
+
+@media(max-width:900px){
+ .admin-page .admin-layout{grid-template-columns:1fr}
+ .admin-page .admin-sidebar{position:static}
+}
