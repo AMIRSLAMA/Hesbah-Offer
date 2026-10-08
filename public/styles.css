@@ -617,3 +617,15 @@
 .aether-admin .health-ring{background:conic-gradient(var(--a-purple) 0 72%,#202b3c 72% 100%);box-shadow:0 0 35px #7c5cff16}.aether-admin .health-ring>div{background:#0d131d}.aether-admin .health-ring strong{color:#fff}.aether-admin .health-stats div{background:#111925;border-color:#202c3e}.aether-admin .health-stats b{color:#fff}.aether-admin .health-stats span{color:#63728a}
 .aether-admin .admin-list-head h2,.aether-admin .admin-content h2,.aether-admin .admin-verification h2{color:#fff}.aether-admin .muted{color:#697890}.aether-admin .btn{background:linear-gradient(135deg,var(--a-purple),var(--a-blue));color:#fff;border-radius:9px}.aether-admin .btn.light{background:#151d2b;color:#9eafff;border:1px solid #29364b}.aether-admin .status{background:#10271f;color:#42d69d;border:1px solid #194f3d}.aether-admin .status.danger{background:#2b151a;color:#ff7784;border-color:#5c2630}
 @media(max-width:1050px){.aether-admin .admin-kpis{grid-template-columns:repeat(3,1fr)}.aether-top-status{display:none}}@media(max-width:760px){.aether-topbar{padding:0 14px}.aether-brand{min-width:auto}.aether-brand span{display:none}.aether-actions{min-width:auto}.aether-clock{display:none}.aether-shell{grid-template-columns:1fr}.aether-sidebar{border-left:0;border-bottom:1px solid var(--a-line);padding:9px 10px}.aether-side-label,.aether-side-footer{display:none}.aether-sidebar .nav{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}.aether-sidebar .nav button{margin:0}.aether-main{padding:20px 14px}.aether-heading{align-items:flex-start}.aether-date{display:none}.aether-admin .admin-kpis{grid-template-columns:1fr 1fr}}@media(max-width:460px){.aether-admin .admin-kpis{grid-template-columns:1fr}.aether-heading h1{font-size:23px}}
+
+.aether-workflow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:24px 10px 20px;direction:rtl}
+.aether-flow-step{position:relative;min-width:108px;display:flex;flex-direction:column;align-items:center;text-align:center;z-index:2}
+.aether-flow-node{width:58px;height:58px;border-radius:50%;background:#121b29;border:1px solid #2a3850;display:grid;place-items:center;position:relative;box-shadow:0 0 0 6px #0c121d}
+.aether-flow-node span{position:absolute;width:10px;height:10px;border-radius:50%;box-shadow:0 0 16px currentColor}
+.aether-flow-node b{font-size:8px;color:#596981;position:absolute;bottom:-18px}
+.aether-flow-copy{margin-top:22px}.aether-flow-copy strong{display:block;color:#e8eef9;font-size:11px;white-space:nowrap}.aether-flow-copy small{display:block;color:#62718a;font-size:9px;margin-top:5px}
+.aether-flow-line{height:1px;background:linear-gradient(90deg,#7c5cff66,#2e7cff66);width:100%;min-width:35px;position:relative;top:-48px;z-index:-1}
+.aether-flow-line:after{content:'›';position:absolute;right:0;top:-9px;color:#5d6cff;font-size:15px}
+.aether-flow-step.has-orders .aether-flow-node{border-color:#7c5cffaa;box-shadow:0 0 0 6px #0c121d,0 0 28px #7c5cff22}
+.aether-flow-step.has-orders .aether-flow-copy strong{color:#fff}
+@media(max-width:760px){.aether-workflow{justify-content:flex-start}.aether-flow-step{min-width:100px}}
