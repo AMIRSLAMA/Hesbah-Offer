@@ -98,7 +98,7 @@ router.post('/orders',requireAuth,allow('customer'),(req,res)=>{
  try{
   const db=read(),{storeId,items,address,paymentMethod='cash',coupon,lat,lng}=req.body||{};
   if(!storeId||!Array.isArray(items)||!items.length||!address)return res.status(400).json({ok:false,message:'اختر المنتجات والعنوان'});
-  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});const methods=db.settings.paymentMethods||[];const enabledMethods=methods.filter(x=>x.enabled);if(!enabledMethods.length&&paymentMethod==='cash'){}else if(!enabledMethods.some(x=>x.id===paymentMethod))return res.status(400).json({ok:false,message:'طريقة الدفع غير متاحة حالياً'});
+  const store=storeFor(db,storeId);if(!store||!store.isOpen)return res.status(400).json({ok:false,message:'المتجر مغلق حالياً'});const methods=Array.isArray(store.paymentMethods)?store.paymentMethods:(db.settings.paymentMethods||[]);const enabledMethods=methods.filter(x=>x.enabled);if(!enabledMethods.length&&paymentMethod==='cash'){}else if(!enabledMethods.some(x=>x.id===paymentMethod))return res.status(400).json({ok:false,message:'طريقة الدفع غير متاحة حالياً'});
   let subtotal=0;
   const lines=items.map(i=>{
    const p=db.products.find(x=>x.id===i.productId&&x.storeId===storeId&&x.available);
@@ -194,7 +194,7 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  res.json({ok:true,summary,settlements:db.settlements.filter(x=>req.user.role==='admin'||(req.user.role==='merchant'&&x.ownerId===req.user.storeId)||(req.user.role==='driver'&&x.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
-router.get('/payment-methods',(req,res)=>{const configured=(read().settings.paymentMethods||[]).filter(x=>x.enabled).map(({id,name,instructions})=>({id,name,instructions:instructions||''}));const paymentMethods=configured.length?configured:[{id:'cash',name:'الدفع عند الاستلام',instructions:'الدفع نقدًا عند استلام الطلب'}];res.json({ok:true,paymentMethods});});
+router.get('/payment-methods',(req,res)=>{const db=read();const storeId=String(req.query.storeId||'');const store=storeId?storeFor(db,storeId):null;const source=Array.isArray(store?.paymentMethods)?store.paymentMethods:(db.settings.paymentMethods||[]);const configured=source.filter(x=>x.enabled).map(({id,name,instructions})=>({id,name,instructions:instructions||''}));const paymentMethods=configured.length?configured:[{id:'cash',name:'الدفع عند الاستلام',instructions:'الدفع نقدًا عند استلام الطلب'}];res.json({ok:true,paymentMethods});});
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
@@ -207,7 +207,7 @@ router.get('/stores',requireAuth,allow('admin','merchant'),(req,res)=>{
 router.patch('/stores/:id',requireAuth,allow('admin','merchant'),(req,res)=>{
  const db=read(),s=storeFor(db,req.params.id);if(!s)return res.status(404).json({ok:false,message:'المتجر غير موجود'});
  if(req.user.role==='merchant'&&s.id!==req.user.storeId)return res.status(403).json({ok:false});
- for(const k of ['name','category','description','deliveryFee','lat','lng','isOpen'])if(req.body[k]!==undefined)s[k]=req.body[k];if(req.user.role==='admin'&&req.body.commission!==undefined)s.commission=Math.max(0,Number(req.body.commission));
+ for(const k of ['name','category','description','deliveryFee','lat','lng','isOpen'])if(req.body[k]!==undefined)s[k]=req.body[k];if(req.body.paymentMethods!==undefined){if(!Array.isArray(req.body.paymentMethods))return res.status(400).json({ok:false,message:'طرق الدفع غير صحيحة'});s.paymentMethods=req.body.paymentMethods.map(x=>({id:String(x.id),name:String(x.name),enabled:Boolean(x.enabled),instructions:String(x.instructions||'').trim()}));}if(req.user.role==='admin'&&req.body.commission!==undefined)s.commission=Math.max(0,Number(req.body.commission));
  s.updatedAt=now();write(db);res.json({ok:true,store:s});
 });
 router.post('/stores',requireAuth,allow('admin'),(req,res)=>{
