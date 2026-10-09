@@ -222,7 +222,7 @@ router.post('/stores/:id/payment-activation-request',requireAuth,allow('merchant
  router.patch('/stores/:id/payment-activation-request',requireAuth,allow('admin'),(req,res)=>{
   const db=read(),s=storeFor(db,req.params.id),status=String(req.body.status||'');
   if(!s||!s.paymentGatewayRequest)return res.status(404).json({ok:false,message:'طلب التفعيل غير موجود'});
-  if(!['requested','reviewing','waiting_merchant','rejected'].includes(status))return res.status(400).json({ok:false,message:'حالة الطلب غير صحيحة'});
+  if(!['requested','reviewing','approved_pending_setup','waiting_merchant','rejected'].includes(status))return res.status(400).json({ok:false,message:'حالة الطلب غير صحيحة'});
   s.paymentGatewayRequest.status=status;s.paymentGatewayRequest.updatedAt=now();s.updatedAt=now();write(db);
   res.json({ok:true,request:s.paymentGatewayRequest,message:'تم تحديث حالة الطلب'});
  });
