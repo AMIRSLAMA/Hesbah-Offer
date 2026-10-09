@@ -102,8 +102,8 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
   OutlinedTextField(username,{username=it},label={Text("اسم المستخدم")},modifier=Modifier.fillMaxWidth())
   OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth(),visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};TextButton(onClick={driverRegister=true}){Text("تسجيل مندوب جديد")}}
-  Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());api.save(j.getString("token"),j.getJSONObject("user"));onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){if(BuildConfig.APP_MODE=="customer")TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};if(BuildConfig.APP_MODE=="driver")TextButton(onClick={driverRegister=true}){Text("تسجيل مندوب جديد")}}
+  Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());val user=j.getJSONObject("user");val role=user.optString("role");if(BuildConfig.APP_MODE=="customer"&&role!="customer")throw Exception("هذا التطبيق مخصص للعملاء");if(BuildConfig.APP_MODE=="driver"&&role!="driver")throw Exception("هذا التطبيق مخصص لمندوبي التوصيل");api.save(j.getString("token"),user);onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
  }
 }
 data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
