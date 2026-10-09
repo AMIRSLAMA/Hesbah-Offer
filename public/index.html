@@ -14,6 +14,7 @@
 <footer class="hc-footer"><div class="hc-footer-main"><div class="hc-footer-brand"><a class="hc-logo"><span>H</span><strong>HESBAH</strong></a><p>اطلبها. نجيبها.</p><small>من احتياجاتك اليومية لأكبر طلباتك، حسبة معاك.</small></div><div><h4>حسبة</h4><a>عن حسبة</a><a>Corporate</a><a>كن شريكًا</a><a>الوظائف</a></div><div><h4>المساعدة</h4><a>الأسئلة الشائعة</a><a>الشروط والأحكام</a><a>سياسة الخصوصية</a><a onclick="show('#developerChatModal')">تحدث مع خدمة العملاء</a></div><div><h4>اكتشف</h4><a>المطاعم</a><a>البقالة</a><a>العروض</a><a>المناطق</a></div></div><div class="hc-footer-bottom"><span>© 2026 HESBAH — جميع الحقوق محفوظة.</span><span>صنعناها علشان يومك يبقى أسهل.</span></div></footer>
 <script>
 const hesbahEN={
+  'بحث':'Search','استكشف الخدمات':'Explore services','توصيل سريع • طلب آمن • متابعة مباشرة':'Fast delivery • Secure ordering • Live tracking','طلبك الآن':'Your order now','مباشر':'Live','تم قبول الطلب':'Order accepted','المتجر بدأ التجهيز':'The store is preparing your order','جاري التجهيز':'Preparing your order','في الطريق':'On the way','تصفح المتاجر':'Browse stores','ابدأ الطلب':'Start order','اكتشف':'Explore','عن حسبة':'About HESBAH','Corporate':'Corporate','تحدث مع خدمة العملاء':'Contact customer support','المطاعم':'Restaurants','البقالة':'Groceries','العروض':'Offers','المناطق':'Areas','بحث':'Search','تأكيد الطلب':'Place order','السلة فارغة':'Your cart is empty','المطاعم والمتاجر':'Restaurants & Stores','اختار المطعم وابدأ طلبك.':'Choose a restaurant and start ordering.','جاري تحميل المطاعم والمتاجر...':'Loading restaurants and stores...','لا توجد مطاعم أو متاجر متاحة حالياً.':'No restaurants or stores are available right now.','اكتب اسم المنتج أو المتجر الذي تبحث عنه.':'Enter the product or store name you are looking for.','نتائج البحث عن:':'Search results for:','جاري البحث عن المنتجات...':'Searching for products...','أضف للسلة +':'Add to cart +','تحديد مكان التوصيل':'Set delivery location','لم يتم تحديد مكان التوصيل بعد.':'Delivery location has not been set yet.','تم التسليم':'Delivered','تم إلغاء الطلب':'Order cancelled','في انتظار قبول التاجر':'Waiting for store acceptance','تم تعيين المندوب':'Courier assigned','المندوب استلم الطلب':'Courier picked up the order','حسابي':'My account','تعذر الحصول على الموقع':'Could not get your location','تعذر رفع الصورة':'Could not upload image','تم حفظ الملف الشخصي':'Profile saved','تسجيل الدخول':'Login','تسجيل الخروج':'Logout','اسم المستخدم':'Username','كلمة المرور':'Password','إنشاء حساب':'Create account','الاسم':'Name','رقم الهاتف':'Phone number','البريد الإلكتروني':'Email','العنوان بالتفصيل':'Detailed address','حفظ البيانات':'Save changes','تغيير كلمة المرور':'Change password','كلمة المرور الحالية':'Current password','كلمة المرور الجديدة':'New password','إرسال':'Send','رسالتك':'Your message','نوع المشكلة':'Issue type','الأسئلة الشائعة':'FAQ','الشروط والأحكام':'Terms & Conditions','سياسة الخصوصية':'Privacy Policy','الوظائف':'Careers','القاهرة':'Cairo','الجيزة':'Giza','الإسكندرية':'Alexandria',
   'الخدمات':'Services','العروض':'Offers','التطبيق':'App','كن شريكًا':'Become a Partner','العربية':'EN',
   'الرئيسية':'Home','طلباتي':'My Orders','السلة':'Cart','تسجيل الدخول':'Login','تسجيل الخروج':'Logout',
   'إعدادات الحساب':'Account Settings','التحدث مع خدمة العملاء':'Customer Support','مرحبًا بك':'Welcome',
@@ -35,29 +36,47 @@ const hesbahEN={
   'رسالتك':'Your message','إرسال':'Send','عن حسبة':'About HESBAH','الوظائف':'Careers','الأسئلة الشائعة':'FAQ',
   'الشروط والأحكام':'Terms & Conditions','سياسة الخصوصية':'Privacy Policy','المطاعم':'Restaurants','المناطق':'Areas'
 };
+const hesbahOriginalText=new WeakMap();
+function translateTextNodes(root=document.body){
+ if(!root)return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node;
+ while((node=walker.nextNode())){
+  const p=node.parentElement;
+  if(!p||p.closest('script,style,noscript,textarea,input,select,option'))continue;
+  if(!hesbahOriginalText.has(node))hesbahOriginalText.set(node,node.nodeValue);
+  const original=hesbahOriginalText.get(node),key=original.trim();
+  if(!key)continue;
+  const value=document.documentElement.lang==='en'?(hesbahEN[key]||key):key;
+  const leading=(original.match(/^\\s*/)||[''])[0],trailing=(original.match(/\\s*$/)||[''])[0];
+  if(node.nodeValue!==leading+value+trailing)node.nodeValue=leading+value+trailing;
+ }
+}
 function translatePage(lang){
-  const isEn=lang==='en';
-  document.documentElement.lang=isEn?'en':'ar';
-  document.documentElement.dir=isEn?'ltr':'rtl';
-  document.title=isEn?'HESBAH':'HESBAH';
-  document.querySelectorAll('.hc-language').forEach(b=>{
-    b.innerHTML=isEn?'العربية <span>⌄</span>':'EN <span>⌄</span>';
-  });
-  const nodes=document.querySelectorAll('[data-i18n]');
-  nodes.forEach(el=>{const ar=el.dataset.i18n;if(ar)el.textContent=isEn?(hesbahEN[ar]||ar):ar;});
-  document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{
-    if(!el.dataset.hesbahAr) el.dataset.hesbahAr=el.placeholder;
-    const ar=el.dataset.hesbahAr;
-    if(isEn && hesbahEN[ar]) el.placeholder=hesbahEN[ar];
-    else if(!isEn) el.placeholder=ar;
-  });
-  localStorage.setItem('hesbahLang',lang);
+ const isEn=lang==='en';
+ document.documentElement.lang=isEn?'en':'ar';
+ document.documentElement.dir=isEn?'ltr':'rtl';
+ document.title='HESBAH';
+ document.querySelectorAll('.hc-language').forEach(b=>{b.innerHTML=isEn?'العربية <span>⌄</span>':'EN <span>⌄</span>';});
+ document.querySelectorAll('[data-i18n]').forEach(el=>{const ar=el.dataset.i18n;if(ar)el.textContent=isEn?(hesbahEN[ar]||ar):ar;});
+ document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{if(!el.dataset.hesbahAr)el.dataset.hesbahAr=el.placeholder;const ar=el.dataset.hesbahAr;if(isEn&&hesbahEN[ar])el.placeholder=hesbahEN[ar];else if(!isEn)el.placeholder=ar;});
+ document.querySelectorAll('select option').forEach(el=>{if(!el.dataset.hesbahAr)el.dataset.hesbahAr=el.textContent;const ar=el.dataset.hesbahAr;el.textContent=isEn?(hesbahEN[ar]||ar):ar;});
+ translateTextNodes(document.body);
+ localStorage.setItem('hesbahLang',lang);
 }
 window.toggleLanguage=function(){
   const next=document.documentElement.lang==='en'?'ar':'en';
   translatePage(next);
 };
 
+if(!window.hesbahTranslationObserver&&document.body){
+ window.hesbahTranslationObserver=new MutationObserver(records=>{
+  for(const r of records){
+   if(r.type==='childList')r.addedNodes.forEach(n=>{if(n.nodeType===1)translateTextNodes(n);else if(n.nodeType===3&&n.parentElement)translateTextNodes(n.parentElement);});
+  }
+ });
+ window.hesbahTranslationObserver.observe(document.body,{childList:true,subtree:true});
+}
 document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('hesbahLang');
   translatePage(saved==='en'?'en':'ar');
