@@ -87,7 +87,17 @@ router.get('/products',(req,res)=>{
 router.get('/orders',requireAuth,(req,res)=>{
  const db=read();let o=db.orders.filter(x=>visibleOrder(req,x));
  if(req.query.status)o=o.filter(x=>x.status===req.query.status);
- res.json({ok:true,orders:o.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(o=>visibleOrderData(req,o))});
+ const orders=o.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(order=>{
+  const safe=visibleOrderData(req,order);
+  if(req.user.role==='driver'){
+   const customer=user(db,order.customerId);
+   safe.customer={name:customer?.name||order.customerName||'',phone:customer?.phone||order.customerPhone||'',address:order.address||customer?.address||''};
+   safe.customerName=safe.customer.name;
+   safe.customerPhone=safe.customer.phone;
+  }
+  return safe;
+ });
+ res.json({ok:true,orders});
 });
 router.get('/orders/:id',requireAuth,(req,res)=>{
  const db=read(),o=db.orders.find(x=>x.id===req.params.id);if(!o)return res.status(404).json({ok:false,message:'الطلب غير موجود'});
