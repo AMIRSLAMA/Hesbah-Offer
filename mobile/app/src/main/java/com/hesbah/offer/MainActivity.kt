@@ -81,7 +81,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
 @Composable fun HesbahApp(api:Api){
  var session by remember{mutableStateOf(api.session())}
  val expectedRole=BuildConfig.APP_MODE
- if(session!=null && session!!.role!=expectedRole){api.clear();session=null}
+ LaunchedEffect(session?.role,expectedRole){if(session!=null && session!!.role!=expectedRole){api.clear();session=null}}
  if(session==null) Login(api){session=api.session()}
  else when(expectedRole){
   "driver" -> DriverHome(api,session!!){api.clear();session=null}
