@@ -10,7 +10,26 @@ let deliveryLocation={lat:null,lng:null};
 async function api(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})};const r=await fetch('/api'+url,opt);const j=await r.json();if(r.status===401){token='';user=null;localStorage.removeItem('hesbahCustomerToken');localStorage.removeItem('hesbahCustomerUser')}if(!r.ok)throw new Error(j.message||'حدث خطأ');return j}
 function money(n){return Number(n||0).toFixed(0)+' ج.م'}function show(id){$(id).classList.add('show')}function hide(id){$(id).classList.remove('show')}
 function storeImage(s){if(s.image||s.coverImage||s.logo)return s.image||s.coverImage||s.logo;const c=String(s.category||'').toLowerCase();if(c.includes('بقال')||c.includes('grocery'))return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=85';if(c.includes('مطعم')||c.includes('restaurant')||c.includes('food'))return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85';return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=85'}
-async function loadMarket(){const q=new URLSearchParams(location.search).get('q')||'';const d=await api('/marketplace'+(q?'?q='+encodeURIComponent(q):''));const g=$('#stores');if(!g)return;g.innerHTML=(d.stores||[]).map(s=>'<article class="market-store-card"><div class="market-store-cover"><img src="'+storeImage(s)+'" alt="'+s.name+'" loading="lazy" onerror="this.onerror=null;this.src=\'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=85\'"><span class="market-store-category">'+(s.category||'متجر')+'</span><span class="market-store-rating">★ '+(s.rating||0)+'</span></div><div class="market-store-body"><div><h3>'+s.name+'</h3><p>'+(s.description||'متجر جاهز لاستقبال طلباتك')+'</p></div><div class="market-store-meta"><span>🚚 توصيل '+money(s.deliveryFee)+'</span><span>⚡ طلبات سريعة</span></div><button class="market-store-btn" onclick="openStore(\''+s.id+'\')">تصفح المتجر <b>←</b></button></div></article>').join('')||'<div class="customer-orders-empty">لا توجد مطاعم أو متاجر متاحة حالياً.</div>'}
+function customerText(ar,en){return document.documentElement.lang==='en'?en:ar}
+function customerCategory(category){
+ const map={'بقالة':'Groceries','مطاعم':'Restaurants','مطعم':'Restaurant','متجر':'Store','إلكترونيات':'Electronics','الصحة والعناية':'Health & Care','هدايا':'Gifts','عام':'General'};
+ return document.documentElement.lang==='en'?(map[category]||category):category;
+}
+async function loadMarket(){
+ const q=new URLSearchParams(location.search).get('q')||'';
+ const d=await api('/marketplace'+(q?'?q='+encodeURIComponent(q):''));
+ const g=$('#stores');if(!g)return;
+ const isEn=document.documentElement.lang==='en';
+ g.innerHTML=(d.stores||[]).map(s=>{
+  const category=customerCategory(s.category||'متجر');
+  const description=s.description||customerText('متجر جاهز لاستقبال طلباتك','A store ready to receive your orders');
+  const delivery=customerText('🚚 توصيل ','🚚 Delivery ');
+  const quick=customerText('⚡ طلبات سريعة','⚡ Fast orders');
+  const browse=customerText('تصفح المتجر','Browse store');
+  const arrow=isEn?'→':'←';
+  return '<article class="market-store-card"><div class="market-store-cover"><img src="'+storeImage(s)+'" alt="'+s.name+'" loading="lazy" onerror="this.onerror=null;this.src=\\'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=85\\'"><span class="market-store-category">'+category+'</span><span class="market-store-rating">★ '+(s.rating||0)+'</span></div><div class="market-store-body"><div><h3>'+s.name+'</h3><p>'+description+'</p></div><div class="market-store-meta"><span>'+delivery+money(s.deliveryFee)+'</span><span>'+quick+'</span></div><button class="market-store-btn" onclick="openStore(\\''+s.id+'\\')">'+browse+' <b>'+arrow+'</b></button></div></article>';
+ }).join('')||'<div class="customer-orders-empty">'+customerText('لا توجد مطاعم أو متاجر متاحة حالياً.','No restaurants or stores are available right now.')+'</div>';
+}
 window.storeImage=storeImage;
 async function searchProducts(){
  const input=$('#q'),q=String(input?.value||'').trim();
