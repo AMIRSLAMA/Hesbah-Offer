@@ -401,7 +401,7 @@ fun OperationsHome(api:Api,s:Session,isAdmin:Boolean,onLogout:()->Unit){
   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
    Button(onClick={showProducts=false;load()}){Text("الطلبات")}
    if(!isAdmin)Button(onClick={showProducts=true;load()}){Text("المنتجات")}
-   TextButton(onClick={load}){Text("تحديث")}
+   TextButton(onClick={ { load() } }){Text("تحديث")}
   }
   if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.error)
   if(isAdmin && stats!=null){
