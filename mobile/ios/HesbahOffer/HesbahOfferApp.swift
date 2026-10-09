@@ -8,7 +8,7 @@ struct HesbahOfferApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(model)
-                .environment(.layoutDirection, .rightToLeft)
+                .environment(\.layoutDirection, .rightToLeft)
                 .preferredColorScheme(.light)
         }
     }
