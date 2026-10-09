@@ -80,8 +80,15 @@ private lateinit var pendingUri:Uri
 class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
 @Composable fun HesbahApp(api:Api){
  var session by remember{mutableStateOf(api.session())}
- if(session==null) Login(api){session=api.session()} else if(session!!.role=="driver") DriverHome(api,session!!){api.clear();session=null} else CustomerHome(api,session!!){api.clear();session=null}
-}
+ val expectedRole=BuildConfig.APP_MODE
+ if(session!=null && session!!.role!=expectedRole){api.clear();session=null}
+ if(session==null) Login(api){session=api.session()}
+ else when(expectedRole){
+  "driver" -> DriverHome(api,session!!){api.clear();session=null}
+  "merchant" -> OperationsHome(api,session!!,false){api.clear();session=null}
+  "admin" -> OperationsHome(api,session!!,true){api.clear();session=null}
+  else -> CustomerHome(api,session!!){api.clear();session=null}
+ }}
 @Composable fun Login(api:Api,onDone:()->Unit){
  var register by remember{mutableStateOf(false)};var driverRegister by remember{mutableStateOf(false)}
  if(driverRegister){DriverRegistration(api){driverRegister=false};return}
@@ -103,7 +110,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
   OutlinedTextField(password,{password=it},label={Text("كلمة المرور")},modifier=Modifier.fillMaxWidth(),visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
   if(error.isNotBlank())Text(error,color=MaterialTheme.colorScheme.error)
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){if(BuildConfig.APP_MODE=="customer")TextButton(onClick={register=true}){Text("تسجيل عميل جديد")};if(BuildConfig.APP_MODE=="driver")TextButton(onClick={driverRegister=true}){Text("تسجيل مندوب جديد")}}
-  Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());val user=j.getJSONObject("user");val role=user.optString("role");if(BuildConfig.APP_MODE=="customer"&&role!="customer")throw Exception("هذا التطبيق مخصص للعملاء");if(BuildConfig.APP_MODE=="driver"&&role!="driver")throw Exception("هذا التطبيق مخصص لمندوبي التوصيل");api.save(j.getString("token"),user);onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
+  Button(onClick={scope.launch{try{val j=api.call("/api/auth/login","POST",JSONObject().put("username",username).put("password",password).toString());val user=j.getJSONObject("user");val role=user.optString("role");if(role!=BuildConfig.APP_MODE)throw Exception(when(BuildConfig.APP_MODE){"customer"->"هذا التطبيق مخصص للعملاء";"merchant"->"هذا التطبيق مخصص للتجار";"driver"->"هذا التطبيق مخصص لمندوبي التوصيل";else->"هذا التطبيق مخصص للإدارة"});api.save(j.getString("token"),user);onDone()}catch(e:Exception){error=e.message?:"خطأ"}}},modifier=Modifier.fillMaxWidth()){Text("دخول")}
  }
 }
 data class CartLine(val productId:String,val name:String,val price:Double,val qty:Int,val storeId:String)
@@ -362,3 +369,80 @@ fun DriverHome(api:Api,s:Session,onLogout:()->Unit){
     }
 }
 
+@Composable
+fun OperationsHome(api:Api,s:Session,isAdmin:Boolean,onLogout:()->Unit){
+ var orders by remember{mutableStateOf(emptyList<JSONObject>())}
+ var products by remember{mutableStateOf(emptyList<JSONObject>())}
+ var stats by remember{mutableStateOf<JSONObject?>(null)}
+ var message by remember{mutableStateOf("")}
+ var showProducts by remember{mutableStateOf(false)}
+ val scope=rememberCoroutineScope()
+ fun load(){
+  scope.launch{
+   try{
+    val oj=api.call("/api/orders").getJSONArray("orders")
+    orders=(0 until oj.length()).map{oj.getJSONObject(it)}
+    if(isAdmin) stats=api.call("/api/dashboard").getJSONObject("stats")
+    if(!isAdmin){
+     val pj=api.call("/api/products/manage").getJSONArray("products")
+     products=(0 until pj.length()).map{pj.getJSONObject(it)}
+    }
+    message=""
+   }catch(e:Exception){message=e.message?:"تعذر تحميل البيانات"}
+  }
+ }
+ LaunchedEffect(Unit){load()}
+ Column(Modifier.fillMaxSize().padding(16.dp)){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+   Text(if(isAdmin)"لوحة الإدارة" else "إدارة المتجر",style=MaterialTheme.typography.titleLarge)
+   TextButton(onClick=onLogout){Text("خروج")}
+  }
+  Text("مرحباً ${s.name}")
+  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+   Button(onClick={showProducts=false;load()}){Text("الطلبات")}
+   if(!isAdmin)Button(onClick={showProducts=true;load()}){Text("المنتجات")}
+   TextButton(onClick={load}){Text("تحديث")}
+  }
+  if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.error)
+  if(isAdmin && stats!=null){
+   val st=stats!!
+   Card(Modifier.fillMaxWidth().padding(vertical=6.dp)){Column(Modifier.padding(12.dp)){
+    Text("ملخص المنصة",style=MaterialTheme.typography.titleMedium)
+    Text("إجمالي الطلبات: "+st.optInt("orders"))
+    Text("الطلبات النشطة: "+st.optInt("pending"))
+    Text("المتاجر: "+st.optInt("stores")+" • المندوبون: "+st.optInt("drivers"))
+    Text("العملاء: "+st.optInt("customers"))
+    Text("الإيرادات: "+st.optDouble("revenue")+" ج.م")
+   }}
+  }
+  if(showProducts && !isAdmin){
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+    items(products){p->Card(Modifier.fillMaxWidth()){Column(Modifier.padding(12.dp)){
+     Text(p.optString("name"),style=MaterialTheme.typography.titleMedium)
+     Text("السعر: "+p.optDouble("price")+" ج.م")
+     Text(if(p.optBoolean("available",true))"متاح" else "غير متاح")
+     Text("المخزون: "+p.optInt("stock",-1).let{if(it<0)"غير محدود" else it.toString()})
+    }}}
+   }
+  }else{
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
+    items(orders){o->
+     Card(Modifier.fillMaxWidth()){Column(Modifier.padding(12.dp)){
+      Text("طلب #"+o.optString("number"),style=MaterialTheme.typography.titleMedium)
+      Text("الحالة: "+o.optString("status"))
+      Text("الإجمالي: "+o.optDouble("total")+" ج.م")
+      Text(o.optString("address"))
+      val status=o.optString("status")
+      val next=when(status){"pending"->"accepted";"accepted"->"preparing";"preparing"->"ready_for_pickup";else->""}
+      if(next.isNotBlank()){
+       Button(onClick={scope.launch{try{
+        api.call("/api/orders/"+o.getString("id")+"/status","PATCH",JSONObject().put("status",next).toString())
+        message="تم تحديث حالة الطلب";load()
+       }catch(e:Exception){message=e.message?:"تعذر تحديث الطلب"}}}){Text(when(next){"accepted"->"قبول الطلب";"preparing"->"بدء التجهيز";else->"جاهز للاستلام"})}
+      }
+     }}
+    }
+   }
+  }
+ }
+}
