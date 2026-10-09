@@ -1,23 +1,31 @@
-const token=()=>localStorage.hesbahToken||'';
+function sessionKeys(role=pageRole()){const r=role||'admin';return {token:'hesbahToken_'+r,user:'hesbahUser_'+r};}
+function decodeSessionRole(value){try{const raw=(value||'').split('.')[1]||'';const normalized=raw.replace(/-/g,'+').replace(/_/g,'/');const padded=normalized+'='.repeat((4-normalized.length%4)%4);return JSON.parse(atob(padded)).role||'';}catch{return '';}}
+function token(){
+  const role=pageRole(),keys=sessionKeys(role);
+  const saved=localStorage.getItem(keys.token)||'';
+  if(saved)return saved;
+  const legacy=localStorage.getItem('hesbahToken')||'';
+  if(role&&legacy&&decodeSessionRole(legacy)===role){
+    localStorage.setItem(keys.token,legacy);
+    const oldUser=localStorage.getItem('hesbahUser')||'';
+    if(oldUser){try{const u=JSON.parse(oldUser);if(u?.role===role)localStorage.setItem(keys.user,oldUser);}catch{}}
+    localStorage.removeItem('hesbahToken');
+    localStorage.removeItem('hesbahUser');
+    return legacy;
+  }
+  return '';
+}
 function currentRole(){
-  try{
-    const raw=token().split('.')[1]||'';
-    const normalized=raw.replace(/-/g,'+').replace(/_/g,'/');
-    const padded=normalized+'='.repeat((4-normalized.length%4)%4);
-    const payload=JSON.parse(atob(padded));
-    if(payload.role)return payload.role;
-  }catch{}
-  try{
-    const u=JSON.parse(localStorage.hesbahUser||'null');
-    if(u?.role)return u.role;
-  }catch{}
+  const role=decodeSessionRole(token());
+  if(role)return role;
+  try{const u=JSON.parse(localStorage.getItem(sessionKeys().user)||'null');if(u?.role)return u.role;}catch{}
   return '';
 }
 function roleAr(role){return ({admin:'مدير النظام',merchant:'التاجر',driver:'مندوب التوصيل',customer:'العميل'})[role]||'غير معروف';}
 function pageRole(){const p=location.pathname;return p.endsWith('/driver.html')?'driver':p.endsWith('/merchant.html')?'merchant':p.endsWith('/admin.html')?'admin':'';}
 function ensurePageRole(role){const expected=pageRole();if(!expected||expected===role)return true;const box=document.querySelector('#orders');if(box)box.innerHTML='<div class="card driver-access"><h2>⚠️ الحساب غير مخصص لهذه الصفحة</h2><p>هذه صفحة <b>'+roleAr(expected)+'</b>، لكن الحساب الحالي هو <b>'+roleAr(role)+'</b>.</p><button class="btn" onclick="logout()">خروج وتسجيل الدخول بالحساب الصحيح</button></div>';stopDriverGPS();return false;}
-async function apiP(url,opt={}){if(!token())return location.href='/';opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token(),'Content-Type':'application/json'};const r=await fetch('/api'+url,opt);const j=await r.json();if(r.status===401){localStorage.clear();location.href='/'}if(!r.ok)throw new Error(j.message||'خطأ');return j}
-function logout(){localStorage.removeItem('hesbahToken');localStorage.removeItem('hesbahUser');localStorage.removeItem('hesbahDriverAvailable');const role=pageRole();if(role==='merchant'||role==='admin')renderRoleLogin(role);else renderDriverLogin()}
+async function apiP(url,opt={}){if(!token()){const role=pageRole();location.href=role==='merchant'?'/merchant-login.html':role==='driver'?'/driver-login.html':'/admin.html';throw new Error('سجّل الدخول للمتابعة')}opt.headers={...(opt.headers||{}),Authorization:'Bearer '+token(),'Content-Type':'application/json'};const r=await fetch('/api'+url,opt);const j=await r.json();if(r.status===401){const k=sessionKeys();localStorage.removeItem(k.token);localStorage.removeItem(k.user);localStorage.removeItem('hesbahDriverAvailable');const role=pageRole();location.href=role==='merchant'?'/merchant-login.html':role==='driver'?'/driver-login.html':'/admin.html'}if(!r.ok)throw new Error(j.message||'خطأ');return j}
+function logout(){const role=pageRole(),k=sessionKeys(role);localStorage.removeItem(k.token);localStorage.removeItem(k.user);localStorage.removeItem('hesbahDriverAvailable');if(role==='merchant'||role==='admin')renderRoleLogin(role);else renderDriverLogin()}
 function fmt(n){return Number(n||0).toFixed(0)+' ج.م'}
 let activeView='orders';
 let ordersLoadSeq=0;
@@ -301,7 +309,7 @@ async function loadFinance(){activeView='finance';try{const d=await apiP('/finan
   document.body.innerHTML='<main class="driver-login-page"><section class="driver-login-card"><div class="driver-login-brand">HESBAH <span>'+expected.toUpperCase()+'</span></div><div class="driver-login-bike">'+icon+'</div><h1>تسجيل دخول '+label+'</h1><p>أدخل بيانات الحساب للوصول إلى لوحة التحكم.</p><form id="roleLoginForm"><input id="roleLoginUser" class="input" placeholder="اسم المستخدم" autocomplete="username" required><input id="roleLoginPass" class="input" type="password" placeholder="كلمة المرور" autocomplete="current-password" required><button class="btn" type="submit">دخول إلى لوحة التحكم</button></form><div id="roleLoginError" class="driver-login-error"></div></section></main>';
   document.querySelector('#roleLoginForm').addEventListener('submit',async e=>{
     e.preventDefault();const err=document.querySelector('#roleLoginError');err.textContent='جاري تسجيل الدخول...';
-    try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.querySelector('#roleLoginUser').value.trim(),password:document.querySelector('#roleLoginPass').value})});const d=await r.json();if(!r.ok)throw new Error(d.message||'بيانات الدخول غير صحيحة');if(d.user?.role!==expected)throw new Error('هذا الحساب ليس حساب '+label+'.');localStorage.hesbahToken=d.token;localStorage.hesbahUser=JSON.stringify(d.user);location.reload()}catch(e){err.textContent=e.message}
+    try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.querySelector('#roleLoginUser').value.trim(),password:document.querySelector('#roleLoginPass').value})});const d=await r.json();if(!r.ok)throw new Error(d.message||'بيانات الدخول غير صحيحة');if(d.user?.role!==expected)throw new Error('هذا الحساب ليس حساب '+label+'.');const k=sessionKeys(expected);localStorage.setItem(k.token,d.token);localStorage.setItem(k.user,JSON.stringify(d.user));localStorage.removeItem('hesbahToken');localStorage.removeItem('hesbahUser');location.reload()}catch(e){err.textContent=e.message}
   });
 }
 function renderDriverLogin(){
@@ -328,8 +336,11 @@ function renderDriverLogin(){
       const d=await r.json();
       if(!r.ok)throw new Error(d.message||'بيانات الدخول غير صحيحة');
       if(d.user?.role!=='driver')throw new Error('هذا الحساب ليس حساب مندوب توصيل.');
-      localStorage.hesbahToken=d.token;
-      localStorage.hesbahUser=JSON.stringify(d.user);
+      const k=sessionKeys('driver');
+      localStorage.setItem(k.token,d.token);
+      localStorage.setItem(k.user,JSON.stringify(d.user));
+      localStorage.removeItem('hesbahToken');
+      localStorage.removeItem('hesbahUser');
       location.reload();
     }catch(e){err.textContent=e.message}
   });
@@ -350,8 +361,6 @@ const path=location.pathname;
 const expectedPageRole=pageRole();
 const savedRole=currentRole();
 if(expectedPageRole&&expectedPageRole!=='driver'&&(!token()||savedRole!==expectedPageRole)){
-  localStorage.removeItem('hesbahToken');
-  localStorage.removeItem('hesbahUser');
   renderRoleLogin(expectedPageRole);
 }else if(path.endsWith('/driver.html')&&!token())renderDriverLogin();
 else if(path.endsWith('/admin.html'))loadDashboard();else loadOrders();
