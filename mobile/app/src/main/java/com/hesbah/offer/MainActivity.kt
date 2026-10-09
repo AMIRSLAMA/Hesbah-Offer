@@ -18,6 +18,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -117,6 +121,9 @@ data class CartLine(val productId:String,val name:String,val price:Double,val qt
 
 @Composable
 fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
+    val navy=Color(0xFF172554)
+    val teal=Color(0xFF0F9D91)
+    val pale=Color(0xFFF4F7FB)
     var stores by remember{mutableStateOf(emptyList<JSONObject>())}
     var products by remember{mutableStateOf(emptyList<JSONObject>())}
     var orders by remember{mutableStateOf(emptyList<JSONObject>())}
@@ -128,143 +135,107 @@ fun CustomerHome(api:Api,s:Session,onLogout:()->Unit){
     var payment by remember{mutableStateOf("")}
     var message by remember{mutableStateOf("")}
     var showOrders by remember{mutableStateOf(false)}
+    var search by remember{mutableStateOf("")}
     val scope=rememberCoroutineScope()
-
     fun loadOrders(){
-        scope.launch{
-            try{
-                val j=api.call("/api/orders")
-                val a=j.getJSONArray("orders")
-                orders=(0 until a.length()).map{a.getJSONObject(it)}
-            }catch(e:Exception){message=e.message?:"تعذر تحميل الطلبات"}
-        }
+        scope.launch{try{val j=api.call("/api/orders");val a=j.getJSONArray("orders");orders=(0 until a.length()).map{a.getJSONObject(it)}}catch(e:Exception){message=e.message?:"تعذر تحميل الطلبات"}}
     }
     LaunchedEffect(Unit){
-        try{
-            val j=api.call("/api/marketplace")
-            val a=j.getJSONArray("stores")
-            stores=(0 until a.length()).map{a.getJSONObject(it)}
-            val pm=api.call("/api/payment-methods").getJSONArray("paymentMethods")
-            paymentMethods=(0 until pm.length()).map{pm.getJSONObject(it)}
-            if(paymentMethods.isNotEmpty()) payment=paymentMethods[0].getString("id")
-            loadOrders()
+        try{val j=api.call("/api/marketplace");val a=j.getJSONArray("stores");stores=(0 until a.length()).map{a.getJSONObject(it)}
+            val pm=api.call("/api/payment-methods").getJSONArray("paymentMethods");paymentMethods=(0 until pm.length()).map{pm.getJSONObject(it)}
+            if(paymentMethods.isNotEmpty())payment=paymentMethods[0].getString("id");loadOrders()
         }catch(e:Exception){message=e.message?:"تعذر تحميل البيانات"}
     }
     fun addProduct(p:JSONObject,storeId:String){
-        if(cart.isNotEmpty() && cart[0].storeId!=storeId){message="السلة لا تجمع منتجات من متجرين";return}
-        val id=p.getString("id")
-        val old=cart.find{it.productId==id}
-        cart=if(old==null) cart+CartLine(id,p.getString("name"),p.getDouble("price"),1,storeId)
-             else cart.map{if(it.productId==id)it.copy(qty=it.qty+1)else it}
+        if(cart.isNotEmpty()&&cart[0].storeId!=storeId){message="السلة لا تجمع منتجات من متجرين";return}
+        val id=p.getString("id");val old=cart.find{it.productId==id}
+        cart=if(old==null)cart+CartLine(id,p.getString("name"),p.getDouble("price"),1,storeId)else cart.map{if(it.productId==id)it.copy(qty=it.qty+1)else it}
+        message="تمت إضافة المنتج إلى السلة ✓"
     }
     fun checkout(){
-        scope.launch{
-            try{
-                if(cart.isEmpty())throw Exception("السلة فارغة")
-                if(address.isBlank())throw Exception("اكتب عنوان التوصيل")
-                val items=org.json.JSONArray()
-                cart.forEach{items.put(JSONObject().put("productId",it.productId).put("qty",it.qty))}
-                val body=JSONObject().put("storeId",cart[0].storeId).put("items",items).put("address",address).put("paymentMethod",payment).put("coupon",coupon)
-                val j=api.call("/api/orders","POST",body.toString())
-                message="تم إنشاء الطلب #"+j.getJSONObject("order").getString("number")
-                cart=emptyList()
-                loadOrders()
-            }catch(e:Exception){message=e.message?:"تعذر إنشاء الطلب"}
-        }
+        scope.launch{try{if(cart.isEmpty())throw Exception("السلة فارغة");if(address.isBlank())throw Exception("اكتب عنوان التوصيل")
+            val items=org.json.JSONArray();cart.forEach{items.put(JSONObject().put("productId",it.productId).put("qty",it.qty))}
+            val body=JSONObject().put("storeId",cart[0].storeId).put("items",items).put("address",address).put("paymentMethod",payment).put("coupon",coupon)
+            val j=api.call("/api/orders","POST",body.toString());message="تم إنشاء الطلب #"+j.getJSONObject("order").getString("number");cart=emptyList();loadOrders()
+        }catch(e:Exception){message=e.message?:"تعذر إنشاء الطلب"}}
     }
-    Column(Modifier.fillMaxSize().padding(16.dp)){
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-            Text("أهلاً "+s.name,style=MaterialTheme.typography.titleLarge)
-            Row{
-                TextButton(onClick={loadOrders();showOrders=true}){Text("طلباتي")}
-                TextButton(onClick=onLogout){Text("خروج")}
-            }
+    Column(Modifier.fillMaxSize().background(pale)){
+        Row(Modifier.fillMaxWidth().background(navy).padding(horizontal=18.dp,vertical=16.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+            Column{Text("HESBAH",color=Color.White,fontWeight=FontWeight.Black,style=MaterialTheme.typography.titleLarge);Text("حسبة أوفر • كل اللي بتحبه أقرب لك",color=Color(0xFFB8D8E8),style=MaterialTheme.typography.bodySmall)}
+            Column(horizontalAlignment=androidx.compose.ui.Alignment.End){Text("أهلاً، ${s.name}",color=Color.White,fontWeight=FontWeight.SemiBold);TextButton(onClick=onLogout,contentPadding=PaddingValues(0.dp)){Text("تسجيل الخروج",color=Color(0xFFB8D8E8))}}
         }
-        if(message.isNotBlank())Text(message,color=MaterialTheme.colorScheme.primary)
+        if(message.isNotBlank())Text(message,Modifier.fillMaxWidth().background(Color(0xFFE4F7F1)).padding(horizontal=16.dp,vertical=8.dp),color=Color(0xFF087F70),style=MaterialTheme.typography.bodySmall)
         if(showOrders){
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                Text("طلباتي",style=MaterialTheme.typography.headlineSmall)
-                TextButton(onClick={showOrders=false}){Text("المتاجر")}
+            Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("طلباتي",style=MaterialTheme.typography.headlineSmall,color=navy,fontWeight=FontWeight.Bold);TextButton(onClick={showOrders=false}){Text("العودة للمتاجر")}}
+            LazyColumn(Modifier.weight(1f).padding(horizontal=14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                items(orders){o->Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
+                    Text("طلب #"+o.optString("number"),style=MaterialTheme.typography.titleMedium,color=navy,fontWeight=FontWeight.Bold)
+                    Text("الحالة: "+o.optString("status"),color=teal,fontWeight=FontWeight.SemiBold)
+                    Text("الإجمالي: "+o.optDouble("total")+" ج.م");Text(o.optString("address"),color=Color.Gray)
+                    if(o.optString("status")=="picked_up"||o.optString("status")=="out_for_delivery")Button(onClick={scope.launch{try{val t=api.call("/api/orders/"+o.getString("id")+"/tracking").getJSONObject("tracking");val d=t.optJSONObject("driver");message="المندوب: "+(d?.optString("name")?:"-")+" | الموقع: "+(d?.optDouble("lat",0.0))+", "+(d?.optDouble("lng",0.0))}catch(e:Exception){message=e.message?:"تعذر تحديث الموقع"}}},colors=ButtonDefaults.buttonColors(containerColor=teal)){Text("📍 تحديث موقع المندوب")}}
+                }}
             }
-            LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){
-                items(orders){o->
-                    Card(Modifier.fillMaxWidth()){
-                        Column(Modifier.padding(12.dp)){
-                            Text("طلب #"+o.getString("number"))
-                            Text("الحالة: "+o.getString("status"))
-                            Text("الإجمالي: "+o.getDouble("total")+" ج.م")
-                            Text(o.optString("address"))
-                            if(o.getString("status")=="picked_up" || o.getString("status")=="out_for_delivery"){
-                                Button(onClick={
-                                    scope.launch{
-                                        try{
-                                            val t=api.call("/api/orders/"+o.getString("id")+"/tracking").getJSONObject("tracking")
-                                            val d=t.optJSONObject("driver")
-                                            message="المندوب: "+(d?.optString("name")?:"-")+" | الموقع: "+(d?.optDouble("lat",0.0))+ ", "+(d?.optDouble("lng",0.0))
-                                        }catch(e:Exception){message=e.message?:"تعذر تحديث الموقع"}
-                                    }
-                                }){Text("📍 تحديث موقع المندوب")}
+        }else if(selectedStore==null){
+            LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(bottom=18.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+                item{
+                    Column(Modifier.padding(horizontal=16.dp,vertical=14.dp)){
+                        Text("طلبك المفضل، على بُعد خطوات",style=MaterialTheme.typography.headlineSmall,color=navy,fontWeight=FontWeight.ExtraBold)
+                        Spacer(Modifier.height(5.dp));Text("اكتشف المحلات والعروض اللي حواليك",color=Color(0xFF64748B))
+                        Spacer(Modifier.height(14.dp))
+                        OutlinedTextField(value=search,onValueChange={search=it},modifier=Modifier.fillMaxWidth(),singleLine=true,shape=RoundedCornerShape(16.dp),label={Text("🔎  بتدور على إيه؟")},colors=OutlinedTextFieldDefaults.colors(unfocusedContainerColor=Color.White,focusedContainerColor=Color.White))
+                    }
+                }
+                item{
+                    Column(Modifier.padding(horizontal=16.dp).fillMaxWidth().background(teal, RoundedCornerShape(22.dp)).padding(18.dp)){
+                        Text("عروض حسبة أوفر",color=Color.White,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.ExtraBold)
+                        Text("وفّر في طلبك الجاي واستمتع بتجربة أسهل",color=Color.White)
+                        Spacer(Modifier.height(10.dp))
+                        Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("🍔",style=MaterialTheme.typography.displaySmall);Spacer(Modifier.width(10.dp));Column{Text("كل اللي بتحبه في مكان واحد",color=Color.White,fontWeight=FontWeight.Bold);Text("مطاعم • بقالة • احتياجات يومية",color=Color.White)}}
+                    }
+                }
+                item{
+                    Row(Modifier.fillMaxWidth().padding(horizontal=16.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                        Text("متاجر قريبة منك",style=MaterialTheme.typography.titleLarge,color=navy,fontWeight=FontWeight.Bold)
+                        TextButton(onClick={loadOrders();showOrders=true}){Text("طلباتي",color=teal)}
+                    }
+                }
+                items(stores.filter{it.optString("name").contains(search,true)||it.optString("category").contains(search,true)}){st->
+                    Card(Modifier.fillMaxWidth().padding(horizontal=14.dp),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=Color.White),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)){
+                        Row(Modifier.fillMaxWidth().padding(14.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                            Box(Modifier.size(82.dp).background(Color(0xFFE8F5F3),RoundedCornerShape(16.dp)),contentAlignment=androidx.compose.ui.Alignment.Center){Text("🛍️",style=MaterialTheme.typography.headlineLarge)}
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)){
+                                Text(st.optString("name"),style=MaterialTheme.typography.titleMedium,color=navy,fontWeight=FontWeight.Bold)
+                                Text(st.optString("category","متجر"),color=Color(0xFF64748B))
+                                Text("⭐ "+st.optDouble("rating",0.0)+"  •  توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م",style=MaterialTheme.typography.bodySmall,color=Color(0xFF475569))
+                                Button(onClick={scope.launch{try{val j=api.call("/api/stores/"+st.getString("id"));selectedStore=st;val a=j.getJSONArray("products");products=(0 until a.length()).map{a.getJSONObject(it)};message=""}catch(e:Exception){message=e.message?:"تعذر فتح المتجر"} }},shape=RoundedCornerShape(12.dp),colors=ButtonDefaults.buttonColors(containerColor=navy),contentPadding=PaddingValues(horizontal=18.dp,vertical=6.dp)){Text("تصفح المنتجات")}
                             }
                         }
                     }
                 }
             }
-        }else if(selectedStore==null){
-            Text("المتاجر والعروض",style=MaterialTheme.typography.headlineSmall)
-            LazyColumn(verticalArrangement=Arrangement.spacedBy(10.dp)){
-                items(stores){st->
-                    Card(Modifier.fillMaxWidth()){
-                        Column(Modifier.padding(16.dp)){
-                            Text(st.getString("name"),style=MaterialTheme.typography.titleLarge)
-                            Text(st.optString("category"))
-                            Text("⭐ "+st.optDouble("rating",0.0)+" • توصيل "+st.optDouble("deliveryFee",0.0)+" ج.م")
-                            Button(onClick={
-                                scope.launch{
-                                    try{
-                                        val j=api.call("/api/stores/"+st.getString("id"))
-                                        selectedStore=st
-                                        val a=j.getJSONArray("products")
-                                        products=(0 until a.length()).map{a.getJSONObject(it)}
-                                    }catch(e:Exception){message=e.message?:"تعذر فتح المتجر"}
-                                }
-                            }){Text("فتح المتجر")}
-                        }
-                    }
-                }
-            }
         }else{
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-                Text(selectedStore!!.getString("name"),style=MaterialTheme.typography.headlineSmall)
-                TextButton(onClick={selectedStore=null}){Text("← المتاجر")}
+            Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                Column{Text(selectedStore!!.optString("name"),style=MaterialTheme.typography.headlineSmall,color=navy,fontWeight=FontWeight.Bold);Text(selectedStore!!.optString("category"),color=Color.Gray)}
+                TextButton(onClick={selectedStore=null}){Text("← المتاجر",color=teal)}
             }
-            LazyColumn(
-                verticalArrangement=Arrangement.spacedBy(8.dp),
-                modifier=Modifier.weight(1f)
-            ){
-                items(products.filter{it.optBoolean("available",false) && it.optInt("stock",-1)!=0}){p->
-                    Card(Modifier.fillMaxWidth()){
-                        Column(Modifier.padding(12.dp)){
-                            Text(p.getString("name"))
-                            Text(p.optString("description"))
-                            Text(p.getDouble("price").toString()+" ج.م")
-                            Button(onClick={addProduct(p,selectedStore!!.getString("id"))}){Text("أضف للسلة")}
-                        }
-                    }
+            LazyColumn(Modifier.weight(1f).padding(horizontal=14.dp),verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(bottom=10.dp)){
+                items(products.filter{it.optBoolean("available",false)&&it.optInt("stock",-1)!=0}){p->
+                    Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),colors=CardDefaults.cardColors(containerColor=Color.White)){Row(Modifier.padding(14.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+                        Box(Modifier.size(68.dp).background(Color(0xFFFFF1E6),RoundedCornerShape(14.dp)),contentAlignment=androidx.compose.ui.Alignment.Center){Text("🍽️",style=MaterialTheme.typography.headlineMedium)}
+                        Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(p.optString("name"),style=MaterialTheme.typography.titleMedium,color=navy,fontWeight=FontWeight.Bold);Text(p.optString("description"),color=Color.Gray,style=MaterialTheme.typography.bodySmall);Spacer(Modifier.height(5.dp));Text(p.optDouble("price").toString()+" ج.م",color=teal,fontWeight=FontWeight.Bold)}
+                        Button(onClick={addProduct(p,selectedStore!!.getString("id"))},shape=RoundedCornerShape(12.dp),colors=ButtonDefaults.buttonColors(containerColor=teal)){Text("+")}
+                    }}
                 }
             }
-            Text("السلة: "+cart.sumOf{it.qty}+" قطعة — "+cart.sumOf{it.price*it.qty}+" ج.م",style=MaterialTheme.typography.titleMedium)
-            OutlinedTextField(address,{address=it},label={Text("عنوان التوصيل")},modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(coupon,{coupon=it},label={Text("كود الخصم")},modifier=Modifier.fillMaxWidth())
-            if(paymentMethods.isNotEmpty()){
-                Text("طريقة الدفع")
-                paymentMethods.forEach{pm->
-                    Row{
-                        RadioButton(selected=payment==pm.getString("id"),onClick={payment=pm.getString("id")})
-                        Text(pm.getString("name"))
-                    }
-                }
+            Column(Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(topStart=24.dp,topEnd=24.dp)).padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                Text("السلة • ${cart.sumOf{it.qty}} قطعة",style=MaterialTheme.typography.titleMedium,color=navy,fontWeight=FontWeight.Bold)
+                Text("الإجمالي: ${cart.sumOf{it.price*it.qty}} ج.م",style=MaterialTheme.typography.titleLarge,color=teal,fontWeight=FontWeight.ExtraBold)
+                OutlinedTextField(address,{address=it},label={Text("عنوان التوصيل")},modifier=Modifier.fillMaxWidth(),singleLine=true,shape=RoundedCornerShape(12.dp))
+                OutlinedTextField(coupon,{coupon=it},label={Text("كود الخصم (اختياري)")},modifier=Modifier.fillMaxWidth(),singleLine=true,shape=RoundedCornerShape(12.dp))
+                if(paymentMethods.isNotEmpty()){Text("طريقة الدفع",fontWeight=FontWeight.SemiBold,color=navy);paymentMethods.forEach{pm->Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){RadioButton(selected=payment==pm.getString("id"),onClick={payment=pm.getString("id")},colors=RadioButtonDefaults.colors(selectedColor=teal));Text(pm.getString("name"))}}}
+                Button(onClick={checkout()},modifier=Modifier.fillMaxWidth().height(52.dp),shape=RoundedCornerShape(14.dp),colors=ButtonDefaults.buttonColors(containerColor=navy)){Text("تأكيد الطلب  ←",fontWeight=FontWeight.Bold)}
             }
-            Button(onClick={checkout()},modifier=Modifier.fillMaxWidth()){Text("تأكيد الطلب")}
         }
     }
 }
