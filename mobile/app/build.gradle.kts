@@ -18,6 +18,24 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 
+    flavorDimensions += "audience"
+    productFlavors {
+        create("customer") {
+            dimension = "audience"
+            applicationIdSuffix = ".customer"
+            versionNameSuffix = "-customer"
+            resValue("string", "app_name", "Hesbah Offer - العميل")
+            buildConfigField("String", "APP_MODE", "\"customer\"")
+        }
+        create("driver") {
+            dimension = "audience"
+            applicationIdSuffix = ".driver"
+            versionNameSuffix = "-driver"
+            resValue("string", "app_name", "Hesbah Offer - المندوب")
+            buildConfigField("String", "APP_MODE", "\"driver\"")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.hesbah.offer"
         minSdk = 24
