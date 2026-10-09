@@ -34,6 +34,20 @@ android {
             resValue("string", "app_name", "Hesbah Offer - المندوب")
             buildConfigField("String", "APP_MODE", "\"driver\"")
         }
+        create("merchant") {
+            dimension = "audience"
+            applicationIdSuffix = ".merchant"
+            versionNameSuffix = "-merchant"
+            resValue("string", "app_name", "Hesbah Offer - التاجر")
+            buildConfigField("String", "APP_MODE", "\"merchant\"")
+        }
+        create("admin") {
+            dimension = "audience"
+            applicationIdSuffix = ".admin"
+            versionNameSuffix = "-admin"
+            resValue("string", "app_name", "Hesbah Offer - الإدارة")
+            buildConfigField("String", "APP_MODE", "\"admin\"")
+        }
     }
 
     defaultConfig {
