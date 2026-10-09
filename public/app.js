@@ -12,6 +12,30 @@ function money(n){return Number(n||0).toFixed(0)+' ج.م'}function show(id){$(id
 function storeImage(s){if(s.image||s.coverImage||s.logo)return s.image||s.coverImage||s.logo;const c=String(s.category||'').toLowerCase();if(c.includes('بقال')||c.includes('grocery'))return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=85';if(c.includes('مطعم')||c.includes('restaurant')||c.includes('food'))return 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85';return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=85'}
 async function loadMarket(){const q=new URLSearchParams(location.search).get('q')||'';const d=await api('/marketplace'+(q?'?q='+encodeURIComponent(q):''));const g=$('#stores');if(!g)return;g.innerHTML=(d.stores||[]).map(s=>'<article class="market-store-card"><div class="market-store-cover"><img src="'+storeImage(s)+'" alt="'+s.name+'" loading="lazy" onerror="this.onerror=null;this.src=\'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=85\'"><span class="market-store-category">'+(s.category||'متجر')+'</span><span class="market-store-rating">★ '+(s.rating||0)+'</span></div><div class="market-store-body"><div><h3>'+s.name+'</h3><p>'+(s.description||'متجر جاهز لاستقبال طلباتك')+'</p></div><div class="market-store-meta"><span>🚚 توصيل '+money(s.deliveryFee)+'</span><span>⚡ طلبات سريعة</span></div><button class="market-store-btn" onclick="openStore(\''+s.id+'\')">تصفح المتجر <b>←</b></button></div></article>').join('')||'<div class="customer-orders-empty">لا توجد مطاعم أو متاجر متاحة حالياً.</div>'}
 window.storeImage=storeImage;
+async function searchProducts(){
+ const input=$('#q'),q=String(input?.value||'').trim();
+ if(!q){input?.focus();return alert('اكتب اسم المنتج أو المتجر الذي تبحث عنه.')}
+ const box=$('#products'),title=$('#storeTitle');
+ if(title)title.textContent='نتائج البحث عن: '+q;
+ if(box)box.innerHTML='<div class="customer-orders-empty">جاري البحث عن المنتجات...</div>';
+ show('#storeModal');
+ try{
+  const [pd,sd]=await Promise.all([
+   api('/products?q='+encodeURIComponent(q)+'&available=true'),
+   api('/marketplace')
+  ]);
+  const stores=new Map((sd.stores||[]).map(s=>[s.id,s]));
+  const products=(pd.products||[]).filter(p=>stores.has(p.storeId)&&p.available!==false&&p.stock!==0);
+  if(!box)return;
+  box.innerHTML=products.map(p=>{
+   const store=stores.get(p.storeId);
+   const name=String(p.name||'').replace(/'/g,"\\'");
+   const storeId=String(p.storeId||'').replace(/'/g,"\\'");
+   return '<article class="customer-product-card"><div class="customer-product-image">'+(p.image?'<img src="'+p.image+'" alt="'+p.name+'" loading="lazy">':'<div class="customer-product-placeholder">🛍️</div>')+'</div><div class="customer-product-body"><span class="customer-product-category">'+(store?.name||'متجر')+' · '+(p.category||'عام')+'</span><h3>'+p.name+'</h3><p>'+(p.description||'منتج جاهز للطلب')+'</p><div class="customer-product-footer"><strong>'+money(p.price)+'</strong>'+(p.oldPrice?'<del>'+money(p.oldPrice)+'</del>':'')+'<button class="customer-product-btn" onclick="addCart(\''+String(p.id).replace(/'/g,"\\'")+'\',\''+name+'\','+Number(p.price||0)+',\''+storeId+'\')">أضف للسلة +</button></div></div></article>';
+  }).join('')||'<div class="customer-orders-empty">لا توجد منتجات متاحة تطابق بحثك. جرّب كلمة أخرى.</div>';
+ }catch(e){if(box)box.innerHTML='<div class="customer-orders-empty">تعذر البحث عن المنتجات: '+e.message+'</div>'}
+}
+window.searchProducts=searchProducts;
 async function openStore(id){const d=await api('/stores/'+id),s=d.store;$('#storeTitle').textContent=s.name;const h=$('#storeHeroImage');if(h){h.src=s.image||storeImage(s);h.alt=s.name}$('#products').innerHTML=(d.products||[]).filter(p=>p.available&&p.stock!==0).map(p=>'<article class="customer-product-card"><div class="customer-product-image">'+(p.image?'<img src="'+p.image+'" alt="'+p.name+'" loading="lazy">':'<div class="customer-product-placeholder">🍽️</div>')+'</div><div class="customer-product-body"><span class="customer-product-category">'+(p.category||'عام')+'</span><h3>'+p.name+'</h3><p>'+(p.description||'منتج طازج وجاهز للطلب')+'</p><div class="customer-product-footer"><strong>'+money(p.price)+'</strong>'+(p.oldPrice?'<del>'+money(p.oldPrice)+'</del>':'')+'<button class="customer-product-btn" onclick="addCart(\''+p.id+'\',\''+String(p.name).replace(/'/g,"\\'")+'\','+p.price+',\''+id+'\')">أضف للسلة +</button></div></div></article>').join('')||'<div class="customer-orders-empty">لا توجد منتجات متاحة حالياً.</div>';show('#storeModal')}
 function addCart(productId,name,price,storeId){if(cart.length&&cart[0].storeId!==storeId)return alert('السلة لا تجمع منتجات من متجرين في نفس الطلب حالياً');const x=cart.find(i=>i.productId===productId);if(x)x.qty++;else cart.push({productId,name,price,qty:1,storeId});renderCart();loadPaymentMethods();show('#cartModal')}
 function renderCart(){const box=$('#cart');if(!box)return;if(!cart.length){box.innerHTML='<p class="muted">السلة فارغة</p>';$('#cartTotal').textContent='0';return}box.innerHTML=cart.map((x,i)=>`<div class="row" style="padding:10px 0;border-bottom:1px solid #eee"><span>${x.name} × ${x.qty}</span><b>${money(x.price*x.qty)}</b><button onclick="cart.splice(${i},1);renderCart()">×</button></div>`).join('');$('#cartTotal').textContent=money(cart.reduce((a,x)=>a+x.price*x.qty,0))}
