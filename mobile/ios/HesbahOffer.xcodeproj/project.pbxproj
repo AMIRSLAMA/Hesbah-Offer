@@ -1,0 +1,63 @@
+// !$*UTF8*$!
+{
+    archiveVersion = 1;
+    classes = {};
+    objectVersion = 56;
+    objects = {
+        A10000000000000000000001 /* HesbahOfferApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* HesbahOfferApp.swift */; };
+        A10000000000000000000002 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* APIClient.swift */; };
+        A10000000000000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* ContentView.swift */; };
+        A20000000000000000000001 /* HesbahOfferApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HesbahOfferApp.swift; sourceTree = "<group>"; };
+        A20000000000000000000002 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+        A20000000000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+        A20000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+        A20000000000000000000005 /* HesbahOffer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HesbahOffer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+        A30000000000000000000001 = {
+            isa = PBXGroup;
+            children = (A30000000000000000000002 /* HesbahOffer */, A30000000000000000000003 /* Products */);
+            sourceTree = "<group>";
+        };
+        A30000000000000000000002 /* HesbahOffer */ = {
+            isa = PBXGroup;
+            path = HesbahOffer;
+            sourceTree = "<group>";
+            children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A20000000000000000000004);
+        };
+        A30000000000000000000003 /* Products */ = {isa = PBXGroup; name = Products; children = (A20000000000000000000005); sourceTree = "<group>"; };
+        A40000000000000000000001 /* HesbahOffer */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = A80000000000000000000002;
+            buildPhases = (A50000000000000000000001 /* Sources */, A50000000000000000000002 /* Frameworks */, A50000000000000000000003 /* Resources */);
+            buildRules = ();
+            dependencies = ();
+            name = HesbahOffer;
+            productName = HesbahOffer;
+            productReference = A20000000000000000000005;
+            productType = "com.apple.product-type.application";
+        };
+        A50000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
+        A50000000000000000000002 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A50000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A60000000000000000000001 /* Project */ = {
+            isa = PBXProject;
+            attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 1600; };
+            buildConfigurationList = A80000000000000000000001;
+            compatibilityVersion = "Xcode 14.0";
+            developmentRegion = ar;
+            hasScannedForEncodings = 0;
+            knownRegions = (ar, en, Base);
+            mainGroup = A30000000000000000000001;
+            productRefGroup = A30000000000000000000003;
+            projectDirPath = "";
+            projectRoot = "";
+            targets = (A40000000000000000000001);
+        };
+        A70000000000000000000001 /* Debug project */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Debug; };
+        A70000000000000000000002 /* Release project */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
+        A70000000000000000000003 /* Debug app */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = HesbahOffer/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; PRODUCT_BUNDLE_IDENTIFIER = com.hesbah.offer.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+        A70000000000000000000004 /* Release app */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = HesbahOffer/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 16.0; PRODUCT_BUNDLE_IDENTIFIER = com.hesbah.offer.ios; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+        A80000000000000000000001 /* Project config list */ = {isa = XCConfigurationList; buildConfigurations = (A70000000000000000000001, A70000000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+        A80000000000000000000002 /* Target config list */ = {isa = XCConfigurationList; buildConfigurations = (A70000000000000000000003, A70000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+    };
+    rootObject = A60000000000000000000001;
+}

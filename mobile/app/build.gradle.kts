@@ -3,6 +3,13 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val configuredApiUrl = providers.gradleProperty("HESBAH_API_URL")
+    .orElse(providers.environmentVariable("HESBAH_API_URL"))
+    .orElse("https://hesbah-server.tail957349.ts.net:8443")
+    .get()
+    .trimEnd('/')
+
 android {
     buildFeatures { buildConfig = true }
     namespace = "com.hesbah.offer"
@@ -15,11 +22,12 @@ android {
         applicationId = "com.hesbah.offer"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
-        buildConfigField("String", "API_URL", "\"http://10.0.2.2:8090\"")
+        versionCode = 2
+        versionName = "1.1.0"
+        buildConfigField("String", "API_URL", "\"$configuredApiUrl\"")
     }
 }
+
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.10.0")

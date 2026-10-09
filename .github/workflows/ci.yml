@@ -1,7 +1,7 @@
 name: Hesbah Offer CI
 on:
   push:
-    branches: [main]
+    branches: [main, mobile-app-android-ios]
   pull_request:
     branches: [main]
 jobs:
@@ -35,3 +35,10 @@ jobs:
           name: hesbah-offer-debug-apk
           path: mobile/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build iOS simulator app
+        run: xcodebuild -project HesbahOffer.xcodeproj -scheme HesbahOffer -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+        working-directory: mobile/ios
