@@ -216,13 +216,14 @@ router.post('/stores/:id/payment-activation-request',requireAuth,allow('merchant
   s.updatedAt=now();write(db);res.json({ok:true,request:s.paymentGatewayRequest,message:'تم إرسال طلب تفعيل الفيزا للإدارة بنجاح'});
  });
  router.get('/payment-activation-requests',requireAuth,allow('admin'),(req,res)=>{
-  const db=read(),requests=(db.stores||[]).filter(s=>s.paymentGatewayRequest&&s.paymentGatewayRequest.status).map(s=>({storeId:s.id,storeName:s.name,category:s.category||'عام',status:s.paymentGatewayRequest.status,requestedAt:s.paymentGatewayRequest.requestedAt||'',updatedAt:s.paymentGatewayRequest.updatedAt||'',gatewayStatus:s.paymentGateway?.status||'not_connected'})).sort((a,b)=>String(b.requestedAt).localeCompare(String(a.requestedAt)));
+  const db=read(),requests=(db.stores||[]).filter(s=>s.paymentGatewayRequest&&s.paymentGatewayRequest.status).map(s=>({storeId:s.id,storeName:s.name,category:s.category||'عام',status:s.paymentGatewayRequest.status,activationUrl:s.paymentGatewayRequest.activationUrl||'',requestedAt:s.paymentGatewayRequest.requestedAt||'',updatedAt:s.paymentGatewayRequest.updatedAt||'',gatewayStatus:s.paymentGateway?.status||'not_connected'})).sort((a,b)=>String(b.requestedAt).localeCompare(String(a.requestedAt)));
   res.json({ok:true,requests});
  });
  router.patch('/stores/:id/payment-activation-request',requireAuth,allow('admin'),(req,res)=>{
   const db=read(),s=storeFor(db,req.params.id),status=String(req.body.status||'');
   if(!s||!s.paymentGatewayRequest)return res.status(404).json({ok:false,message:'طلب التفعيل غير موجود'});
   if(!['requested','reviewing','approved_pending_setup','waiting_merchant','rejected'].includes(status))return res.status(400).json({ok:false,message:'حالة الطلب غير صحيحة'});
+  if(req.body.activationUrl!==undefined){const activationUrl=String(req.body.activationUrl||'').trim();if(activationUrl){try{const parsed=new URL(activationUrl);if(!['https:','http:'].includes(parsed.protocol))throw new Error('invalid');}catch{return res.status(400).json({ok:false,message:'رابط التفعيل غير صحيح؛ أدخل رابطاً يبدأ بـ https:// أو http://'});}}s.paymentGatewayRequest.activationUrl=activationUrl;}
   s.paymentGatewayRequest.status=status;s.paymentGatewayRequest.updatedAt=now();s.updatedAt=now();write(db);
   res.json({ok:true,request:s.paymentGatewayRequest,message:'تم تحديث حالة الطلب'});
  });
