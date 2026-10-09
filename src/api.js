@@ -206,8 +206,7 @@ router.get('/finance',requireAuth,allow('admin','merchant','driver'),(req,res)=>
  res.json({ok:true,summary,settlements:db.settlements.filter(x=>req.user.role==='admin'||(req.user.role==='merchant'&&x.ownerId===req.user.storeId)||(req.user.role==='driver'&&x.ownerId===req.user.driverId))});
 });
 router.get('/settings',requireAuth,allow('admin'),(req,res)=>res.json({ok:true,settings:read().settings}));
-router.get('/
- router.post('/stores/:id/payment-activation-request',requireAuth,allow('merchant'),(req,res)=>{
+router.post('/stores/:id/payment-activation-request',requireAuth,allow('merchant'),(req,res)=>{
   const db=read(),s=storeFor(db,req.params.id);if(!s)return res.status(404).json({ok:false,message:'المتجر غير موجود'});
   if(s.id!==req.user.storeId)return res.status(403).json({ok:false,message:'غير مصرح لهذا المتجر'});
   if(s.paymentGateway?.status==='active')return res.status(409).json({ok:false,message:'بوابة الدفع مفعّلة لهذا المتجر بالفعل'});
@@ -228,7 +227,8 @@ router.get('/
   res.json({ok:true,request:s.paymentGatewayRequest,message:'تم تحديث حالة الطلب'});
  });
 
-payment-methods',(req,res)=>{const db=read();const storeId=String(req.query.storeId||'');const store=storeId?storeFor(db,storeId):null;const source=Array.isArray(store?.paymentMethods)?store.paymentMethods:(db.settings.paymentMethods||[]);const configured=source.filter(x=>x.enabled&&(x.id!=='card'||store?.paymentGateway?.status==='active')).map(({id,name,instructions})=>({id,name,instructions:instructions||''}));const paymentMethods=configured.length?configured:[{id:'cash',name:'الدفع عند الاستلام',instructions:'الدفع نقدًا عند استلام الطلب'}];res.json({ok:true,paymentMethods});});
+
+ router.get('/payment-methods',(req,res)=>{const db=read();const storeId=String(req.query.storeId||'');const store=storeId?storeFor(db,storeId):null;const source=Array.isArray(store?.paymentMethods)?store.paymentMethods:(db.settings.paymentMethods||[]);const configured=source.filter(x=>x.enabled&&(x.id!=='card'||store?.paymentGateway?.status==='active')).map(({id,name,instructions})=>({id,name,instructions:instructions||''}));const paymentMethods=configured.length?configured:[{id:'cash',name:'الدفع عند الاستلام',instructions:'الدفع نقدًا عند استلام الطلب'}];res.json({ok:true,paymentMethods});});
 router.patch('/settings',requireAuth,allow('admin'),(req,res)=>{
  const db=read();if(req.body.defaultCommission!=null)db.settings.defaultCommission=Math.max(0,Number(req.body.defaultCommission));
  if(req.body.deliveryBase!=null)db.settings.deliveryBase=Math.max(0,Number(req.body.deliveryBase));
