@@ -1,29 +1,36 @@
 # Hesbah Offer Mobile Apps
 
-Hesbah Offer has a native Android client (Kotlin + Jetpack Compose) and a native iOS client (SwiftUI). Both use the existing Hesbah Offer REST API; neither creates or migrates server data.
+This directory contains the native Android client foundation (Kotlin/Jetpack Compose) and the native iOS project.
 
-## API URL
-The production default is `https://hesbah-server.tail957349.ts.net:8443`.
+## Android app variants
 
-Android developers can override it with a Gradle property or environment variable:
-```bash
-gradle assembleDebug -PHESBAH_API_URL=http://10.0.2.2:8090
-```
-The iOS app reads `HESBAH_API_URL` from its Info.plist, defaulting to the production URL. Change that value only for a deliberate environment change.
+The Android module now defines four product flavors, each with a distinct package ID and role lock:
 
-## Build Android
-```bash
-cd mobile
-gradle assembleDebug
-```
-Artifact: `app/build/outputs/apk/debug/app-debug.apk`.
+- `customer` — customer shopping, cart, checkout, order history and delivery tracking.
+- `merchant` — merchant order workflow and product list.
+- `driver` — assigned deliveries, delivery status changes and location service.
+- `admin` — platform summary and order oversight.
 
-## Build iOS
-Open `mobile/ios/HesbahOffer.xcodeproj` in Xcode on macOS, select the HesbahOffer scheme and an iPhone simulator/device, then build. A signed App Store/TestFlight release additionally requires the owner's Apple Developer account and signing configuration.
+Build variants from Android Studio by selecting the matching variant:
 
-## Supported flows
-- Customer: login/registration, store browsing, products, cash-on-delivery orders, order history.
-- Driver: login, assigned-order list, and delivery status transitions.
-- Merchant and administrator operations remain in the existing web dashboards.
+- `customerDebug`
+- `merchantDebug`
+- `driverDebug`
+- `adminDebug`
 
-The mobile apps use the current server and database at port 8090 through the configured HTTPS endpoint. They do not touch the separate Hesbah POS project or its server.
+The application IDs are `com.hesbah.offer.customer`, `com.hesbah.offer.merchant`, `com.hesbah.offer.driver`, and `com.hesbah.offer.admin`.
+
+## API endpoint
+
+The build reads `HESBAH_API_URL` from a Gradle property or environment variable. The current default is the Tailscale Funnel endpoint for Hesbah Offer on port 8090:
+
+`https://hesbah-server.tail957349.ts.net:8443`
+
+Override it for a local/test server with a Gradle property such as `-PHESBAH_API_URL=https://your-host`. Do not point these apps at the Hesbah main service on port 8080.
+
+## Important release checks
+
+- Confirm the current Tailscale Funnel URL and HTTPS certificate before production release.
+- Build and test all four variants against a test account for the matching role.
+- Android APKs can be built on a compatible Android/Gradle environment.
+- iOS archives and App Store signing require macOS and Xcode. The iOS project still needs the same four role-specific app targets and a release build/test pass before the four-app delivery is complete.
