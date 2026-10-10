@@ -940,3 +940,19 @@ body.admin-page.aether-admin{
   .aether-admin .aether-main{min-width:0}
 }
 @media(prefers-reduced-motion:reduce){.driver-page *, .merchant-page *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Customer marketplace: unified forest-green Hesbah branding */
+.customer-page.hesbah-home{background:#f2f8f3!important;color:#123b2b!important}
+.customer-page .hc-header{background:#062f26!important;border-bottom:1px solid #ffffff20!important;box-shadow:0 10px 28px #03251920}
+.customer-page .hc-logo{color:#f3fff5!important}.customer-page .hc-logo span{background:linear-gradient(145deg,#0a9a68,#b6ef72)!important;color:#073424!important}
+.customer-page .hc-nav a,.customer-page .hc-tools button{color:#d5ebdc!important}
+.customer-page .hc-hero{position:relative;background:radial-gradient(ellipse at 78% 45%,#b6ef7238,transparent 28%),linear-gradient(125deg,#062f26,#075b43 58%,#0a7650)!important;color:#f3fff5!important}
+.customer-page .hc-hero:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;background-image:radial-gradient(#e6ffedcc .7px,transparent .7px);background-size:19px 19px}
+.customer-page .hc-hero-inner{position:relative;z-index:1}.customer-page .hc-overline{color:#caff98!important}.customer-page .hc-overline i{background:#caff98!important}
+.customer-page .hc-hero h1{color:#fff!important}.customer-page .hc-hero h1 em,.customer-page .hc-offer h2 em,.customer-page .hc-app h2 em,.customer-page .hc-partner h2 em{color:#caff98!important}
+.customer-page .hc-hero-copy>p{color:#d0e9d9!important}.customer-page .hc-hero-links a{color:#f4fff7!important}.customer-page .hc-search button{background:linear-gradient(135deg,#0a9a68,#08734f)!important}
+.customer-page .hc-scene-glow{background:radial-gradient(circle,#b6ef7248 0,#0a8f6230 48%,transparent 72%)!important}
+.customer-page .hc-offer,.customer-page .hc-app,.customer-page .hc-partner{background:#f4faf5!important}.customer-page .hc-footer{background:#062f26!important;color:#d4eadd!important}
+.customer-page .market-store-btn,.customer-page .customer-product-btn{background:linear-gradient(135deg,#075b43,#0a9a68)!important}.customer-page .market-store-card{border-bottom-color:#0a9a68!important}
+@media(max-width:760px){.customer-page .hc-inner{padding:12px 4%;gap:12px;flex-wrap:wrap}.customer-page .hc-nav{order:3;flex-basis:100%;gap:16px;overflow-x:auto;padding:6px 0}.customer-page .hc-nav a{white-space:nowrap}.customer-page .hc-hero-inner{padding:42px 6%;grid-template-columns:1fr;gap:20px}.customer-page .hc-hero-scene{height:310px;transform:scale(.88);transform-origin:top center;margin-bottom:-32px}}
