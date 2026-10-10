@@ -103,7 +103,7 @@ private fun HesbahWebApp() {
                 Text("حسبة أوفر", color = WarmWhite, fontSize = 17.sp, fontWeight = FontWeight.Bold)
             }
             if (loading) {
-                androidx.compose.foundation.layout.LinearProgressIndicator(
+                androidx.compose.material3.LinearProgressIndicator(
                     progress = { (progress.coerceIn(0, 100) / 100f).coerceAtLeast(0.08f) },
                     modifier = Modifier.fillMaxWidth(),
                     color = Mint,
