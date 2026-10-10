@@ -809,3 +809,134 @@
 .driver-pick.nearest{border-color:#7c5cff;background:linear-gradient(135deg,#15132b,#101b2b);box-shadow:0 0 24px #7c5cff18}
 .driver-pick-main{display:flex;flex-direction:column;gap:5px}.driver-pick-main b{font-size:14px}.driver-pick-main small{color:#7f8da3;font-size:11px}.driver-pick>strong{color:#8fa8ff;white-space:nowrap;font-size:14px}
 @media(max-width:650px){.driver-pick{align-items:flex-start}.driver-pick>strong{font-size:12px}}
+
+
+/* HESBAH OFFER — unified premium mobile role screens */
+:root{
+  --hesbah-deep:#062f26;
+  --hesbah-forest:#075b43;
+  --hesbah-green:#0a8f62;
+  --hesbah-lime:#b6ef72;
+  --hesbah-mist:#eff8f2;
+}
+body.driver-page,body.merchant-page{
+  background:
+    radial-gradient(ellipse at 88% 7%,rgba(35,184,119,.22),transparent 31%),
+    radial-gradient(ellipse at 4% 72%,rgba(182,239,114,.09),transparent 28%),
+    linear-gradient(145deg,#061e1a 0%,#082f26 48%,#0b4030 100%) !important;
+  color:#f5fff8 !important;
+  min-height:100vh;
+}
+.driver-page:before,.merchant-page:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.14;
+  background-image:radial-gradient(rgba(200,255,221,.6) .7px,transparent .7px);
+  background-size:20px 20px;
+}
+.driver-page .role-top,.merchant-page .role-top{
+  position:relative;z-index:1;background:rgba(4,32,26,.84)!important;
+  border:1px solid rgba(191,255,218,.12);border-top:0;border-left:0;border-right:0;
+  box-shadow:0 12px 35px rgba(0,0,0,.18);backdrop-filter:blur(16px);
+  color:#f4fff7!important;
+}
+.driver-page .logo,.merchant-page .logo{color:#f4fff7!important;letter-spacing:.8px}
+.driver-page .logo span,.merchant-page .logo span{
+  color:#c9ff9b!important;background:rgba(13,154,99,.19);
+  border:1px solid rgba(182,239,114,.24);border-radius:999px;padding:5px 9px;
+}
+.driver-page .role-top small,.merchant-page .role-top small{color:#a8c9b7!important}
+.driver-page .container,.merchant-page .container{position:relative;z-index:1}
+.driver-page .role-hero,.merchant-page .role-hero{
+  position:relative;isolation:isolate;overflow:hidden;
+  color:#f4fff7!important;border:1px solid rgba(203,255,221,.18)!important;
+  border-radius:28px!important;padding:clamp(24px,4vw,42px)!important;
+  background:linear-gradient(112deg,rgba(4,42,32,.97),rgba(7,100,68,.91))!important;
+  box-shadow:0 25px 65px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.09)!important;
+}
+.driver-page .role-hero:before,.merchant-page .role-hero:before{
+  content:"";position:absolute;z-index:-1;inset:0;opacity:.52;
+  background:radial-gradient(circle at 78% 42%,rgba(182,239,114,.24),transparent 27%),
+             linear-gradient(135deg,transparent 45%,rgba(2,20,16,.45));
+}
+.driver-page .role-hero:after,.merchant-page .role-hero:after{
+  position:absolute;z-index:-1;left:2%;bottom:-45%;font-size:clamp(150px,25vw,290px);
+  line-height:1;opacity:.13;filter:drop-shadow(0 12px 28px rgba(0,0,0,.3));
+  pointer-events:none;
+}
+.driver-page .role-hero:after{content:"🏍️"}
+.merchant-page .role-hero:after{content:"🏪"}
+.driver-page .role-hero h1,.merchant-page .role-hero h1{
+  color:#fff!important;font-size:clamp(25px,4vw,42px)!important;line-height:1.35!important;
+  max-width:760px;text-wrap:balance;
+}
+.driver-page .role-hero p,.merchant-page .role-hero p{color:#c2dfce!important;line-height:1.9}
+.driver-page .role-badge,.merchant-page .role-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;
+  color:#d9ffb8!important;background:rgba(182,239,114,.10)!important;
+  border:1px solid rgba(182,239,114,.25);font-weight:900;
+}
+.driver-page .role-icon,.merchant-page .role-icon{
+  filter:drop-shadow(0 15px 25px rgba(0,0,0,.28));font-size:clamp(68px,10vw,112px)!important;
+}
+.driver-page .driver-quick-stats>div,.merchant-page .merchant-stats>div{
+  background:rgba(3,26,21,.48)!important;border:1px solid rgba(210,255,224,.15)!important;
+  border-radius:17px!important;color:#effff3!important;backdrop-filter:blur(10px);
+}
+.driver-page .driver-quick-stats b,.merchant-page .merchant-stats b{color:#caff98!important}
+.driver-page .gps-panel{
+  color:#d8ffdf!important;background:rgba(8,105,67,.3)!important;
+  border:1px solid rgba(137,255,179,.25)!important;border-radius:15px!important;
+}
+.driver-page .driver-toolbar,.merchant-page .merchant-nav,.merchant-page .merchant-filters{
+  background:rgba(4,30,24,.7)!important;border:1px solid rgba(199,255,219,.13)!important;
+  border-radius:17px!important;padding:8px!important;gap:8px;
+}
+.driver-page .driver-filter,.merchant-page .merchant-nav button,.merchant-page .merchant-filters button{
+  color:#c4dfcf!important;background:transparent!important;border:1px solid transparent!important;
+  border-radius:12px!important;min-height:42px;font-weight:800;
+}
+.driver-page .driver-filter.active,.merchant-page .merchant-nav button.active,.merchant-page .merchant-filters button.active{
+  color:#062f26!important;background:linear-gradient(135deg,#caff98,#8de2ae)!important;
+  box-shadow:0 6px 18px rgba(75,205,130,.17);
+}
+.driver-page .order-section,.merchant-page .order-section{color:#effff4}
+.driver-page .section-title h2,.merchant-page .section-title h2{color:#f3fff6!important}
+.driver-page .section-title p,.merchant-page .section-title p{color:#a6c9b5!important}
+.driver-page .role-orders>*,.merchant-page .role-orders>*{
+  border-radius:18px!important;box-shadow:0 14px 35px rgba(0,0,0,.18)!important;
+}
+.driver-page .btn:not(.light),.merchant-page .btn:not(.light){
+  background:linear-gradient(135deg,#0b9c68,#08734f)!important;
+  color:#fff!important;border:1px solid rgba(184,255,213,.2)!important;
+  border-radius:12px!important;font-weight:900;box-shadow:0 8px 18px rgba(0,0,0,.16);
+}
+.driver-page .btn.light{background:#eaffef!important;color:#07563d!important;border:1px solid #b8e9c7!important;border-radius:12px!important}
+.driver-page .driver-status-pill.online{background:rgba(68,214,132,.15)!important;color:#a8ffbe!important;border:1px solid rgba(105,255,164,.25)}
+.driver-page .driver-status-pill.offline{background:rgba(255,105,105,.13)!important;color:#ffc1c1!important}
+.merchant-page .merchant-nav button:hover,.merchant-page .merchant-filters button:hover,.driver-page .driver-filter:hover{border-color:rgba(182,239,114,.32)!important}
+body.admin-page.aether-admin{
+  background:radial-gradient(ellipse at 82% 0%,rgba(12,135,88,.16),transparent 34%),#07130f!important;
+}
+.aether-admin .aether-topbar{background:rgba(4,27,20,.94)!important;border-bottom:1px solid rgba(170,239,192,.14)!important}
+.aether-admin .aether-mark{background:linear-gradient(145deg,#0a8f62,#b6ef72)!important;color:#05271d!important;box-shadow:0 8px 22px rgba(10,143,98,.25)}
+.aether-admin .aether-sidebar{background:rgba(4,24,18,.94)!important;border-left:1px solid rgba(170,239,192,.12)!important}
+.aether-admin .aether-main{background:transparent!important}
+.aether-admin .aether-heading h1{color:#effff4!important}
+.aether-admin .aether-heading p,.aether-admin .aether-heading>div>span{color:#a5c6b2!important}
+.aether-admin .aether-date{border-color:rgba(170,239,192,.15)!important;background:rgba(7,49,35,.56)!important}
+.aether-admin .aether-date b{color:#baff92!important}
+.aether-admin .nav button:hover,.aether-admin .nav button.active{background:rgba(10,143,98,.18)!important;color:#caff98!important;border-color:rgba(182,239,114,.18)!important}
+.aether-admin .card,.aether-admin .kpi,.aether-admin .kpis>*{border-color:rgba(170,239,192,.13)!important}
+@media(max-width:700px){
+  .driver-page .role-top,.merchant-page .role-top{padding:13px 15px!important;gap:10px}
+  .driver-page .driver-head-actions{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .driver-page .role-hero,.merchant-page .role-hero{border-radius:22px!important;padding:22px 19px!important}
+  .driver-page .role-hero:after,.merchant-page .role-hero:after{left:-3%;bottom:-14%;font-size:160px}
+  .driver-page .role-hero h1,.merchant-page .role-hero h1{font-size:25px!important;max-width:100%}
+  .driver-page .driver-toolbar,.merchant-page .merchant-nav{display:flex;overflow-x:auto;max-width:100%}
+  .driver-page .driver-filter,.merchant-page .merchant-nav button{flex:0 0 auto;white-space:nowrap}
+  .merchant-page .merchant-filters{overflow-x:auto}
+  .merchant-page .merchant-filters button{flex:0 0 auto;white-space:nowrap}
+  .aether-admin .aether-sidebar{width:74px!important}
+  .aether-admin .aether-main{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){.driver-page *, .merchant-page *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
