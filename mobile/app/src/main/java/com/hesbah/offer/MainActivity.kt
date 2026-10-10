@@ -8,6 +8,11 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
@@ -83,16 +88,110 @@ class Api(private val context:Context){
 private lateinit var pendingUri:Uri
 class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{HesbahApp(Api(this))}}}
 @Composable fun HesbahApp(api:Api){
- var session by remember{mutableStateOf(api.session())}
- val expectedRole=BuildConfig.APP_MODE
- LaunchedEffect(session?.role,expectedRole){if(session!=null && session!!.role!=expectedRole){api.clear();session=null}}
- if(session==null) Login(api){session=api.session()}
- else when(expectedRole){
-  "driver" -> DriverHome(api,session!!){api.clear();session=null}
-  "merchant" -> OperationsHome(api,session!!,false){api.clear();session=null}
-  "admin" -> OperationsHome(api,session!!,true){api.clear();session=null}
-  else -> CustomerHome(api,session!!){api.clear();session=null}
- }}
+    if (BuildConfig.APP_MODE == "customer") {
+        CustomerWebsite()
+        return
+    }
+    var session by remember{mutableStateOf(api.session())}
+    val expectedRole=BuildConfig.APP_MODE
+    LaunchedEffect(session?.role,expectedRole){if(session!=null && session!!.role!=expectedRole){api.clear();session=null}}
+    if(session==null) Login(api){session=api.session()}
+    else when(expectedRole){
+        "driver" -> DriverHome(api,session!!){api.clear();session=null}
+        "merchant" -> OperationsHome(api,session!!,false){api.clear();session=null}
+        "admin" -> OperationsHome(api,session!!,true){api.clear();session=null}
+        else -> CustomerHome(api,session!!){api.clear();session=null}
+    }
+}
+
+@Composable
+private fun CustomerWebsite() {
+    val context = LocalContext.current
+    val url = BuildConfig.API_URL.trimEnd('/') + "/customer.html"
+    var webView by remember { mutableStateOf<WebView?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = webView?.canGoBack() == true) {
+        webView?.goBack()
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    webView = this
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.loadsImagesAutomatically = true
+                    settings.javaScriptCanOpenWindowsAutomatically = true
+                    settings.setSupportMultipleWindows(false)
+                    settings.useWideViewPort = true
+                    settings.loadWithOverviewMode = true
+                    settings.builtInZoomControls = false
+                    settings.displayZoomControls = false
+                    CookieManagerCompat.enableCookies(this)
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                            loading = true
+                            loadError = null
+                        }
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            loading = false
+                        }
+                        override fun onReceivedError(
+                            view: WebView?,
+                            request: android.webkit.WebResourceRequest?,
+                            error: android.webkit.WebResourceError?
+                        ) {
+                            if (request?.isForMainFrame == true) {
+                                loading = false
+                                loadError = "تعذر فتح صفحة العميل. تأكد من اتصال الإنترنت ثم أعد المحاولة."
+                            }
+                        }
+                    }
+                    webChromeClient = object : WebChromeClient() {}
+                    loadUrl(url)
+                }
+            },
+            update = { view -> webView = view }
+        )
+        if (loading) {
+            CircularProgressIndicator(Modifier.align(androidx.compose.ui.Alignment.Center))
+        }
+        if (loadError != null) {
+            Column(
+                Modifier.align(androidx.compose.ui.Alignment.Center).padding(24.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                Text(loadError ?: "")
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = { loading = true; loadError = null; webView?.reload() }) {
+                    Text("إعادة المحاولة")
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            webView?.apply {
+                stopLoading()
+                destroy()
+            }
+            webView = null
+        }
+    }
+}
+
+private object CookieManagerCompat {
+    fun enableCookies(view: WebView) {
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true)
+        android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
+    }
+}
+
 @Composable fun Login(api:Api,onDone:()->Unit){
  var register by remember{mutableStateOf(false)};var driverRegister by remember{mutableStateOf(false)}
  if(driverRegister){DriverRegistration(api){driverRegister=false};return}
