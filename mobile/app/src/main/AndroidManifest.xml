@@ -4,6 +4,8 @@
         android:allowBackup="false"
         android:hardwareAccelerated="true"
         android:label="${appLabel}"
+        android:icon="${appIcon}"
+        android:roundIcon="${appIcon}"
         android:theme="@style/Theme.HesbahOffer"
         android:usesCleartextTraffic="true">
         <activity
