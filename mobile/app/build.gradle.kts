@@ -38,6 +38,7 @@ android {
             applicationIdSuffix = ".customer"
             versionNameSuffix = "-customer"
             manifestPlaceholders["appLabel"] = "Hesbah Offer - العميل"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             buildConfigField("String", "START_URL", "\"$configuredApiUrl/\"")
             buildConfigField("String", "APP_SECTION", "\"تطبيق العميل\"")
             buildConfigField("String", "APP_ICON", "\"🛍️\"")
@@ -49,6 +50,7 @@ android {
             applicationIdSuffix = ".driver"
             versionNameSuffix = "-driver"
             manifestPlaceholders["appLabel"] = "Hesbah Offer - المندوب"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             buildConfigField("String", "START_URL", "\"$configuredApiUrl/driver-login.html\"")
             buildConfigField("String", "APP_SECTION", "\"تطبيق المندوب\"")
             buildConfigField("String", "APP_ICON", "\"🛵\"")
@@ -60,6 +62,7 @@ android {
             applicationIdSuffix = ".merchant"
             versionNameSuffix = "-merchant"
             manifestPlaceholders["appLabel"] = "Hesbah Offer - التاجر"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             buildConfigField("String", "START_URL", "\"$configuredApiUrl/merchant-login.html\"")
             buildConfigField("String", "APP_SECTION", "\"تطبيق التاجر\"")
             buildConfigField("String", "APP_ICON", "\"🏪\"")
@@ -71,6 +74,7 @@ android {
             applicationIdSuffix = ".admin"
             versionNameSuffix = "-admin"
             manifestPlaceholders["appLabel"] = "Hesbah Offer - الإدارة"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             buildConfigField("String", "START_URL", "\"$configuredApiUrl/admin.html\"")
             buildConfigField("String", "APP_SECTION", "\"تطبيق الإدارة\"")
             buildConfigField("String", "APP_ICON", "\"🛡️\"")
